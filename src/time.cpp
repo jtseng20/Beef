@@ -22,48 +22,6 @@ extern timeInfo globalLimits;
 
 int move_overhead = 100;
 
-timeTuple moves_in_time(int increment, int remaining, int movestogo, int root_ply){
-    int move_num = (root_ply + 1) / 2;
-    int average_time = remaining / movestogo;
-    int extra = average_time * std::max(30 - move_num, 0) / 200;
-    int spend = average_time + extra + increment;
-    int max_usage = std::min(spend * 6, (remaining - move_overhead) / 4);
-
-    if (max_usage < increment) {
-        max_usage = remaining > move_overhead ? remaining - move_overhead : remaining - 1;
-    }
-
-    return {spend, max_usage};
-}
-
-timeTuple no_movestogo(int increment, int remaining, int root_ply) {
-    int min_to_go = increment == 0 ? 10 : 3;
-    int move_num = (root_ply + 1) / 2;
-
-    int extra_movestogo = increment == 0 ? 10 : 0;
-    int movestogo = std::max(50 + extra_movestogo - 4 * move_num / 5 , min_to_go);
-    int average_time = remaining / movestogo;
-    int extra = average_time * std::max(30 - move_num, 0) / 200;
-    int spend = average_time + extra + increment;
-    int max_usage = std::min(spend * 6, (remaining - move_overhead) / 4);
-
-    if (max_usage < increment) {
-        max_usage = remaining > move_overhead ? remaining - move_overhead : remaining - 1;
-    }
-
-    return {spend, max_usage};
-}
-
-timeTuple get_myremain(int increment, int remaining, int movestogo, int root_ply){
-    if (movestogo == 1) {
-        return {remaining - move_overhead, remaining - move_overhead};
-    } else if (movestogo == 0) {
-        return no_movestogo(increment, remaining, root_ply);
-    } else {
-        return moves_in_time(increment, remaining, movestogo, root_ply);
-    }
-}
-
 timeTuple calculate_time()
 {
     int optimaltime;

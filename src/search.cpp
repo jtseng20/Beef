@@ -58,7 +58,7 @@ volatile bool is_timeout = false,
               is_searching = false,
               is_pondering = false;
 
-timeInfo globalLimits = {0};
+timeInfo globalLimits = {0, 0, 0, 0, 0, 0, 0, 0};
 volatile bool ANALYSISMODE = false;
 Move main_pv[MAX_PLY + 1];
 Move latest_pv, latest_ponder;

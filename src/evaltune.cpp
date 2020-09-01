@@ -251,21 +251,21 @@ void init_imbalance_weights(vector <Parameter>& p)
     p.push_back({ nullptr, &my_pieces[4][4], my_pieces[4][4], 2, 1, 0, 0 });
 
 
-    p.push_back({ nullptr, &opponent_pieces[1][0], opponent_pieces[1][0], 2, 1, 0 });
+    p.push_back({ nullptr, &opponent_pieces[1][0], opponent_pieces[1][0], 2, 1, 0, 0  });
 
-    p.push_back({ nullptr, &opponent_pieces[2][0], opponent_pieces[2][0], 2, 1, 0 });
-    p.push_back({ nullptr, &opponent_pieces[2][1], opponent_pieces[2][1], 2, 1, 0 });
+    p.push_back({ nullptr, &opponent_pieces[2][0], opponent_pieces[2][0], 2, 1, 0, 0  });
+    p.push_back({ nullptr, &opponent_pieces[2][1], opponent_pieces[2][1], 2, 1, 0, 0  });
 
-    p.push_back({ nullptr, &opponent_pieces[3][0], opponent_pieces[3][0], 2, 1, 0 });
-    p.push_back({ nullptr, &opponent_pieces[3][1], opponent_pieces[3][1], 2, 1, 0 });
-    p.push_back({ nullptr, &opponent_pieces[3][2], opponent_pieces[3][2], 2, 1, 0 });
+    p.push_back({ nullptr, &opponent_pieces[3][0], opponent_pieces[3][0], 2, 1, 0, 0  });
+    p.push_back({ nullptr, &opponent_pieces[3][1], opponent_pieces[3][1], 2, 1, 0, 0  });
+    p.push_back({ nullptr, &opponent_pieces[3][2], opponent_pieces[3][2], 2, 1, 0, 0  });
 
-    p.push_back({ nullptr, &opponent_pieces[4][0], opponent_pieces[4][0], 2, 1, 0 });
-    p.push_back({ nullptr, &opponent_pieces[4][1], opponent_pieces[4][1], 2, 1, 0 });
-    p.push_back({ nullptr, &opponent_pieces[4][2], opponent_pieces[4][2], 2, 1, 0 });
-    p.push_back({ nullptr, &opponent_pieces[4][3], opponent_pieces[4][3], 2, 1, 0 });
+    p.push_back({ nullptr, &opponent_pieces[4][0], opponent_pieces[4][0], 2, 1, 0, 0  });
+    p.push_back({ nullptr, &opponent_pieces[4][1], opponent_pieces[4][1], 2, 1, 0, 0  });
+    p.push_back({ nullptr, &opponent_pieces[4][2], opponent_pieces[4][2], 2, 1, 0, 0  });
+    p.push_back({ nullptr, &opponent_pieces[4][3], opponent_pieces[4][3], 2, 1, 0, 0  });
 
-    p.push_back({ nullptr, &bishop_pair, bishop_pair, 2, 1, 0 });
+    p.push_back({ nullptr, &bishop_pair, bishop_pair, 2, 1, 0, 0  });
 }
 
 void init_kingTerms(vector <Parameter>& p)
@@ -368,7 +368,7 @@ void init_threatTerms(vector <Parameter>& p)
 
 void init_pieceWeights(vector<Parameter>& p)
 {
-    p.push_back({ nullptr, &PAWN_EG, PAWN_EG, 2, 1, 0 });
+    p.push_back({ nullptr, &PAWN_EG, PAWN_EG, 2, 1, 0, 0 });
     p.push_back({ nullptr, &KNIGHT_MG, KNIGHT_MG, 2, 1, 0, 0 });
     p.push_back({ nullptr, &KNIGHT_EG, KNIGHT_EG, 2, 1, 0, 0 });
     p.push_back({ nullptr, &BISHOP_MG, BISHOP_MG, 2, 1, 0, 0 });
@@ -1161,7 +1161,7 @@ void tune()
         bestError = find_error(K);
         while (improving)
         {
-            sort(params.begin(), params.end(), greater <> ());
+            sort(params.begin(), params.end(), greater <Parameter> ());
             improving = false;
 
             for (unsigned i = 0; i < params.size(); i++)

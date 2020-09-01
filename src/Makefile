@@ -3,8 +3,8 @@ CFLAGS  = -DNDEBUG -Wall -Wcast-qual -Wextra -Wshadow -pedantic -std=c++11 -m64 
 NOPOPFLAGS  = -DNDEBUG -Wall -Wcast-qual -Wextra -Wshadow -pedantic -std=c++11 -m64
 TARGET  = Beef
 OPT     = -O3
-VERSION = 0.1
-OBJECTS = board.o eval.o evaltune.o magic.o main.o movegen.o polyglot.o position.o psqt.o search.o thread.o time.o tt.o uci.o util.o weights.o pyrrhic/tbprobe.o
+VERSION = 0.2
+OBJECTS = board.o eval.o evaltune.o magic.o main.o movegen.o polyglot.o position.o psqt.o search.o syzygy.o thread.o time.o tt.o uci.o util.o weights.o pyrrhic/tbprobe.o
 
 all: $(TARGET)
 
@@ -15,7 +15,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(OPT) -c $^ -o $@ -pthread
 
 nopopcnt:
-	$(CC) $(NOPOPFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(TARGET)_$(VERSION)_nopopcnt
+	$(CC) $(NOPOPFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(TARGET)_$(VERSION)_nopopcnt -pthread
 
 release: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OPT) $^ -o $(TARGET)_$(VERSION) -pthread
+	$(CC) $(CFLAGS) $(OPT) $^ -o $(TARGET)_$(VERSION)_popcnt -pthread
