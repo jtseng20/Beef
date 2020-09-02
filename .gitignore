@@ -78,9 +78,7 @@ syzygy/
 .cccc/
 *.depend
 *.layout
-*.vcxproj
 *.vcxproj.filters
-*.cbp
 
 # Chutzpah Test files
 _Chutzpah*
