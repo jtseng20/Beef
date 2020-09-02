@@ -52,6 +52,7 @@ int timer_count = 1024,
 
 bool is_movetime = false;
 bool is_depth = false;
+bool is_infinite = false;
 
 volatile bool is_timeout = false,
               quit_application = false,
@@ -67,6 +68,7 @@ inline void getMyTimeLimit()
 {
     is_movetime = globalLimits.timelimited;
     is_depth = globalLimits.depthlimited;
+    is_infinite = globalLimits.infinite;
     timer_count = 1024;
     is_timeout = false;
     think_depth_limit = globalLimits.depthlimited ? globalLimits.depthlimit : MAX_PLY;
@@ -265,7 +267,7 @@ void check_time(Position *p) {
 
     if (--timer_count == 0) {
         gettimeofday(&curr_time, nullptr);
-        if (time_passed() >= max_usage && !is_pondering && !is_depth) {
+        if (time_passed() >= max_usage && !is_pondering && !is_depth && !is_infinite) {
             is_timeout = true;
         }
 
@@ -832,9 +834,9 @@ void printInfo(Position *pos, searchInfo *info, int depth, int score, int alpha,
     }
 
     if (score <= alpha) {
-        std::cout << " upperbound alpha " << alpha * 100 / PAWN_EG;
+        std::cout << " upperbound";
     } else if (score >= beta) {
-        std::cout << " lowerbound beta " << beta * 100 / PAWN_EG;
+        std::cout << " lowerbound";
     }
 
     std::cout << " hashfull " << hashfull();
@@ -940,7 +942,7 @@ void aspiration_thread(SearchThread *thread)
         ///PRINT INFO
         printInfo(pos, info, depth, score, alpha, beta, true);
 
-        if (time_passed() > ideal_usage && !is_pondering && !is_depth)
+        if (time_passed() > ideal_usage && !is_pondering && !is_depth && !is_infinite)
         {
             is_timeout = true;
             break;
