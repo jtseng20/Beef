@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Beef" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Beef" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Og" />
+					<Add option="-g" />
+					<Add option="-fsanitize=undefined" />
+				</Compiler>
+				<Linker>
+					<Add option="-fsanitize=undefined" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Beef" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-fomit-frame-pointer" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-flto" />
+					<Add option="-O3" />
+					<Add option="-m64" />
+					<Add option="-DNDEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-flto" />
+					<Add option="-s" />
+					<Add option="-m64" />
+				</Linker>
+			</Target>
+			<Target title="Tune">
+				<Option output="bin/Tune/Beef" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin/Tune/" />
+				<Option object_output="obj/Tune/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-flto" />
+					<Add option="-O3" />
+					<Add option="-D__TUNE__" />
+					<Add option="-DNDEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-flto" />
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add option="-msse3" />
+			<Add option="-mpopcnt" />
+			<Add option="-DUSE_POPCNT" />
+		</Compiler>
+		<Unit filename="src/Beef.h" />
+		<Unit filename="src/board.cpp" />
+		<Unit filename="src/eval.cpp" />
+		<Unit filename="src/evaltune.cpp" />
+		<Unit filename="src/magic.cpp" />
+		<Unit filename="src/main.cpp" />
+		<Unit filename="src/movegen.cpp" />
+		<Unit filename="src/polyglot.cpp" />
+		<Unit filename="src/position.cpp" />
+		<Unit filename="src/psqt.cpp" />
+		<Unit filename="src/pyrrhic/stdendian.h" />
+		<Unit filename="src/pyrrhic/tbchess.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="src/pyrrhic/tbconfig.h" />
+		<Unit filename="src/pyrrhic/tbprobe.cpp" />
+		<Unit filename="src/pyrrhic/tbprobe.h" />
+		<Unit filename="src/search.cpp" />
+		<Unit filename="src/syzygy.cpp" />
+		<Unit filename="src/thread.cpp" />
+		<Unit filename="src/time.cpp" />
+		<Unit filename="src/tt.cpp" />
+		<Unit filename="src/uci.cpp" />
+		<Unit filename="src/util.cpp" />
+		<Unit filename="src/weights.cpp" />
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>
