@@ -27,7 +27,7 @@ extern volatile bool ANALYSISMODE;
 
 static Move convertPyrrhicMove(Position *pos, unsigned result) {
 
-    // Extract Pyrhic's move representation
+    // Extract Pyrrhic's move representation
     unsigned to    = TB_GET_TO(result);
     unsigned from  = TB_GET_FROM(result);
     unsigned ep    = TB_GET_EP(result);

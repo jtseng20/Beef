@@ -564,7 +564,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 // TODO (drstrange767#1#): tune razoring + futility margins / depths + add multiple razor levels
 
     ///Razoring
-    if (!in_check && !is_pv && depth < 3 && info->staticEval <= alpha - RazoringMargin)
+    if (!in_check && !is_pv && depth < 3 && info->staticEval <= alpha - RazoringMarginByDepth[depth])
     {
         return qSearch(thread, info, 0, alpha, beta);
     }
@@ -572,7 +572,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
     bool improving = !in_check && ply > 1 && (info->staticEval >= (info-2)->staticEval || (info-2)->staticEval == UNDEFINED);
 
     ///Reverse Futility Pruning
-    if (!in_check && !is_pv && depth < 9 && info->staticEval - 80 * (depth) >= beta && pos->nonPawn[pos->activeSide])
+    if (!in_check && !is_pv && depth < 9 && info->staticEval - 80 * depth >= (beta - 30*improving) && pos->nonPawn[pos->activeSide])
     {
         return info->staticEval;
     }
@@ -675,7 +675,6 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                 if (!isRoot && depth <= 8 && num_moves >= futility_move_counts[improving][depth])
                     skipQuiets = true;
 
-                // TODO (drstrange767#1#): check this one
                 if (!isRoot && depth <= 8 && !in_check && info->staticEval + PAWN_MG * depth <= alpha &&
                     history + counter + followup < futility_history_limit[improving])
                     skipQuiets = true;

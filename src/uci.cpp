@@ -343,7 +343,7 @@ void go() {
             }
             else if (args[i] == "movetime")
             {
-                movetime = stoi(args[i + 1]);
+                movetime = stoi(args[i + 1]) * 99 / 100;
                 timelimited = true;
             }
         }

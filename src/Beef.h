@@ -1093,12 +1093,11 @@ const int futility_move_counts[2][9] = {
 
 constexpr int ASPIRATION_INIT = 10;
 constexpr int futility_history_limit[2] = { 16000, 9000 };
-constexpr int FrontierRazoringMargin = 100;
-constexpr int RazoringMargin = 350;
+constexpr int RazoringMarginByDepth[3] = {0, 180, 350};
 constexpr int ProbCutMargin = 90;
 
 constexpr int strongHistory = 13000;
-constexpr int singularDepth = 6;
+constexpr int singularDepth = 7;
 
 extern int reductions[2][64][64];
 

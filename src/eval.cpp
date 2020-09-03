@@ -21,7 +21,7 @@
 
 Score trace_scores[TERM_NB][2];
 
-constexpr int lazyThreshold = 1400;
+constexpr int lazyThreshold = 1300;
 
 int Position::scaleFactor() const
 {
