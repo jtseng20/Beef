@@ -47,7 +47,7 @@
 
 
 #define NAME "Beef"
-#define VERSION "0.2"
+#define VERSION "0.2.1"
 #define AUTHOR "Jonathan Tseng"
 
 #if defined(_MSC_VER)
