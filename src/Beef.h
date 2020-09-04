@@ -1097,7 +1097,7 @@ constexpr int RazoringMarginByDepth[3] = {0, 180, 350};
 constexpr int ProbCutMargin = 90;
 
 constexpr int strongHistory = 13000;
-constexpr int singularDepth = 7;
+constexpr int singularDepth = 8;
 
 extern int reductions[2][64][64];
 
@@ -1106,6 +1106,7 @@ inline int lmr(bool improving, int depth, int num_moves) {
 }
 
 extern struct timeval curr_time, start_ts;
+extern int startTime;
 
 extern int timer_count,
 ideal_usage,
@@ -1119,12 +1120,10 @@ quit_application,
 is_searching,
 is_pondering;
 
-inline int time_passed() {
-    return (((curr_time.tv_sec - start_ts.tv_sec) * 1000000) + (curr_time.tv_usec - start_ts.tv_usec)) / 1000;
-}
+int getRealTime();
 
-inline int bench_time(struct timeval s, struct timeval e) {
-    return (((e.tv_sec - s.tv_sec) * 1000000) + (e.tv_usec - s.tv_usec)) / 1000;
+inline int time_passed() {
+    return getRealTime() - startTime;
 }
 
 inline U64 sum_nodes() {

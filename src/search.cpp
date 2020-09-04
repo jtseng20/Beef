@@ -19,31 +19,12 @@
 #include "Beef.h"
 #include "pyrrhic/tbprobe.h"
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#pragma comment(lib, "winmm")
-int gettimeofday(struct timeval* tp, struct timezone* tzp)
-{
-    static const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 
-    SYSTEMTIME  system_time;
-    FILETIME    file_time;
-    uint64_t    time;
-
-    GetSystemTime(&system_time);
-    SystemTimeToFileTime(&system_time, &file_time);
-    time = ((uint64_t)file_time.dwLowDateTime);
-    time += ((uint64_t)file_time.dwHighDateTime) << 32;
-
-    tp->tv_sec = (long)((time - EPOCH) / 10000000L);
-    tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
-    return 0;
-}
-#endif
-
+// A shameless copy of Laser's parameters; it remains to be seen if these are any good
 static const int SkipSize[16] = { 1, 1, 1, 2, 2, 2, 1, 3, 2, 2, 1, 3, 3, 2, 2, 1 };
 static const int SkipDepths[16] = { 1, 2, 2, 4, 4, 3, 2, 5, 4, 3, 2, 6, 5, 4, 3, 2 };
 
-struct timeval curr_time, start_ts;
+int startTime = 0;
 
 int timer_count = 1024,
     ideal_usage = 10000,
@@ -266,7 +247,6 @@ void check_time(Position *p) {
     }
 
     if (--timer_count == 0) {
-        gettimeofday(&curr_time, nullptr);
         if (time_passed() >= max_usage && !is_pondering && !is_depth && !is_infinite) {
             is_timeout = true;
         }
@@ -766,12 +746,6 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
         pos->undo_move(m);
 
-        ///TIME CONTROL STUFF
-        if (is_timeout)
-        {
-            return TIMEOUT;
-        }
-
         if (score > bestScore)
         {
             bestScore = score;
@@ -818,7 +792,6 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
 void printInfo(Position *pos, searchInfo *info, int depth, int score, int alpha, int beta, bool printed)
 {
-    gettimeofday(&curr_time, nullptr);
     int time_taken = time_passed();
     U64 tb_hits = sum_tb_hits();
     std::cout << "info depth " << depth << " seldepth " << pos->my_thread->seldepth + 1 <<" multipv 1 ";
@@ -892,7 +865,7 @@ void aspiration_thread(SearchThread *thread)
         {
             score = alphaBeta(thread, info, depth, alpha, beta);
 
-            if (is_timeout)
+            if (is_timeout && depth > 1)
             {
                 break;
             }
@@ -975,13 +948,12 @@ void think (Position *pos)
     getMyTimeLimit();
     start_search();
 
-    gettimeofday(&start_ts, nullptr);
+    startTime = getRealTime();
 
     /// Probe book and TB
     Move probeMove = book.probe(*pos);
     if (probeMove != MOVE_NONE)
     {
-        gettimeofday(&curr_time, nullptr);
         cout << "info time " << time_passed() << endl;
         cout << "info book move is " << move_to_str(probeMove) << endl;
         cout << "bestmove " << move_to_str(probeMove) << endl;
@@ -990,7 +962,6 @@ void think (Position *pos)
 
     if (tablebasesProbeDTZ(pos, &probeMove, &latest_ponder))
     {
-        gettimeofday(&curr_time, nullptr);
         cout << "info time " << time_passed() << endl;
         cout << "info TB move is " << move_to_str(probeMove) << endl;
         cout << "bestmove " << move_to_str(probeMove) << endl;
@@ -1016,7 +987,6 @@ void think (Position *pos)
 
     while (is_pondering) {}
 
-    gettimeofday(&curr_time, nullptr);
     cout << "info time " << time_passed() << endl;
     cout << "bestmove " << move_to_str(main_pv[0]);
 
@@ -1034,8 +1004,7 @@ void think (Position *pos)
 void bench()
 {
     uint64_t nodes = 0;
-    struct timeval bench_start, bench_end;
-    gettimeofday(&bench_start, nullptr);
+    int benchStart = getRealTime();
     int tmp_ideal_usage = ideal_usage;
     is_timeout = false;
     globalLimits.movesToGo = 0;
@@ -1056,8 +1025,7 @@ void bench()
         clear_tt();
     }
 
-    gettimeofday(&bench_end, nullptr);
-    int time_taken = bench_time(bench_start, bench_end);
+    int time_taken = getRealTime() - benchStart;
     ideal_usage = tmp_ideal_usage;
 
     std::cout << "\n------------------------\n";

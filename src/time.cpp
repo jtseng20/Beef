@@ -20,6 +20,22 @@
 
 extern timeInfo globalLimits;
 
+// Andrew Grant tells me this is a better way to count time :)
+int getRealTime() {
+#if defined(_WIN32) || defined(_WIN64)
+    return (GetTickCount());
+#else
+    struct timeval tv;
+    int secsInMilli, usecsInMilli;
+
+    gettimeofday(&tv, NULL);
+    secsInMilli = (tv.tv_sec) * 1000;
+    usecsInMilli = tv.tv_usec / 1000;
+
+    return secsInMilli + usecsInMilli;
+#endif
+}
+
 int move_overhead = 100;
 
 timeTuple calculate_time()
