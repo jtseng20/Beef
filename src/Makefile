@@ -18,4 +18,4 @@ nopopcnt:
 	$(CC) $(NOPOPFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(TARGET)_$(VERSION)_nopopcnt -pthread
 
 release: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OPT) $^ -o $(TARGET)_$(VERSION)_popcnt -pthread
+	$(CC) $(CFLAGS) $(OPT) -static $^ -o $(TARGET)_$(VERSION)_popcnt -lpthread

@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <iterator>
 #include <thread>
+#include <pthread.h>
 #include <map>
 #include <array>
 #include <bitset>
@@ -876,7 +877,7 @@ extern int num_threads;
 extern SearchThread main_thread;
 extern SearchThread* search_threads;
 
-inline SearchThread* get_thread(int thread_id) { return thread_id == 0 ? &main_thread : &search_threads[thread_id - 1]; }
+inline void* get_thread(int thread_id) { return thread_id == 0 ? &main_thread : &search_threads[thread_id - 1]; }
 void clear_threads();
 
 extern int PAWN_MG;
@@ -1129,7 +1130,7 @@ inline int time_passed() {
 inline U64 sum_nodes() {
     U64 s = 0;
     for (int i = 0; i < num_threads; ++i) {
-        SearchThread* t = get_thread(i);
+        SearchThread* t = (SearchThread*)get_thread(i);
         s += t->nodes;
     }
     return s;
@@ -1138,7 +1139,7 @@ inline U64 sum_nodes() {
 inline U64 sum_tb_hits() {
     U64 s = 0;
     for (int i = 0; i < num_threads; ++i) {
-        SearchThread *t = get_thread(i);
+        SearchThread *t = (SearchThread*)get_thread(i);
         s += t->tb_hits;
     }
     return s;
@@ -1146,7 +1147,7 @@ inline U64 sum_tb_hits() {
 
 inline void initialize_nodes() {
     for (int i = 0; i < num_threads; ++i) {
-        SearchThread* t = get_thread(i);
+        SearchThread* t = (SearchThread*)get_thread(i);
         t->nodes = 0;
         t->tb_hits = 0;
     }
@@ -1177,7 +1178,7 @@ extern int move_overhead;
 template <bool Root> U64 Perft(Position& pos, int depth);
 
 
-void think(Position* pos);
+void *think(void* pos);
 void loop();
 
 

@@ -794,7 +794,7 @@ Position* start_position()
 
 Position* import_fen(const char* fen, int thread_id)
 {
-    SearchThread* t = get_thread(thread_id);
+    SearchThread* t = (SearchThread*)get_thread(thread_id);
     Position* p = &t->position;
     p->readFEN(fen);
     p->my_thread = t;

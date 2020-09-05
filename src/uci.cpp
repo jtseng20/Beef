@@ -358,8 +358,11 @@ void go() {
     globalLimits.infinite = infinite;
     }
 
-    std::thread think_thread(think, root_position);
-    think_thread.detach();
+    //std::thread think_thread(think, root_position);
+    //think_thread.detach();
+    pthread_t gothread;
+    pthread_create(&gothread, NULL, &think, root_position);
+    pthread_detach(gothread);
 }
 
 void eval() {

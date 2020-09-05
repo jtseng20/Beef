@@ -823,8 +823,9 @@ void printInfo(Position *pos, searchInfo *info, int depth, int score, int alpha,
     std::cout << std::endl;
 }
 
-void aspiration_thread(SearchThread *thread)
+void *aspiration_thread(void *t)
 {
+    SearchThread *thread = (SearchThread *)t;
     Position *pos = &thread->position;
     searchInfo *info = &thread->ss[2];
     bool is_main = is_main_thread(pos);
@@ -941,10 +942,12 @@ void aspiration_thread(SearchThread *thread)
             }
         }
     }
+    return NULL;
 }
 
-void think (Position *pos)
+void* think (void *p)
 {
+    Position *pos = (Position*)p;
     getMyTimeLimit();
     start_search();
 
@@ -957,7 +960,7 @@ void think (Position *pos)
         cout << "info time " << time_passed() << endl;
         cout << "info book move is " << move_to_str(probeMove) << endl;
         cout << "bestmove " << move_to_str(probeMove) << endl;
-        return;
+        return NULL;
     }
 
     if (tablebasesProbeDTZ(pos, &probeMove, &latest_ponder))
@@ -965,25 +968,28 @@ void think (Position *pos)
         cout << "info time " << time_passed() << endl;
         cout << "info TB move is " << move_to_str(probeMove) << endl;
         cout << "bestmove " << move_to_str(probeMove) << endl;
-        return;
+        return NULL;
     }
 
-    std::thread *threads = new std::thread[num_threads];
+    //std::thread *threads = new std::thread[num_threads];
+    pthread_t threads[num_threads];
     initialize_nodes();
 
     is_searching = true;
 
     for (int i = 0; i < num_threads; i++)
     {
-        threads[i] = std::thread(aspiration_thread, get_thread(i));
+        //threads[i] = std::thread(aspiration_thread, get_thread(i));
+        pthread_create(&threads[i], NULL, &aspiration_thread, get_thread(i));
     }
 
     for (int i = 0; i < num_threads; i++)
     {
-        threads[i].join();
+        //threads[i].join();
+        pthread_join(threads[i], NULL);
     }
 
-    delete[] threads;
+    //delete[] threads;
 
     while (is_pondering) {}
 
@@ -995,10 +1001,12 @@ void think (Position *pos)
     }
 
     cout<<endl;
+    fflush(stdout);
     if (quit_application)
         exit(EXIT_SUCCESS);
 
     is_searching = false;
+    return NULL;
 }
 
 void bench()

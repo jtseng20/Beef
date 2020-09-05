@@ -29,7 +29,7 @@ void get_ready() {
     main_thread.rootheight = main_thread.position.historyIndex;
 
     for (int i = 1; i < num_threads; ++i) {
-        SearchThread *t = get_thread(i);
+        SearchThread *t = (SearchThread*)get_thread(i);
         t->rootheight = main_thread.rootheight;
         memcpy(&t->position, &main_thread.position, sizeof(Position));
         t->position.my_thread = t;
@@ -37,7 +37,7 @@ void get_ready() {
 
     for (int i = 0; i < num_threads; i++)
     {
-        SearchThread *t = get_thread(i);
+        SearchThread *t = (SearchThread*)get_thread(i);
         t->doNMP = true;
 
         for (int j = 0; j < MAX_PLY + 2; ++j) {
@@ -56,7 +56,7 @@ void get_ready() {
 
 void clear_threads() {
     for (int i = 0; i < num_threads; ++i) {
-        SearchThread *search_thread = get_thread(i);
+        SearchThread *search_thread = (SearchThread*)get_thread(i);
 
         // Clear history
         std::memset(&search_thread->historyTable, 0, sizeof(search_thread->historyTable));
@@ -86,7 +86,7 @@ void reset_threads(int thread_num) {
     search_threads = new SearchThread[num_threads - 1];
 
     for (int i = 1; i < thread_num; ++i) {
-        get_thread(i)->thread_id = i;
+        ((SearchThread*)get_thread(i))->thread_id = i;
     }
     clear_threads();
     get_ready();
@@ -96,7 +96,7 @@ void init_threads() {
     search_threads = new SearchThread[num_threads - 1];
 
     for (int i = 0; i < num_threads; ++i) {
-        get_thread(i)->thread_id = i;
+        ((SearchThread*)get_thread(i))->thread_id = i;
     }
     clear_threads();
 }
