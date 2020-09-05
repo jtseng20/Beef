@@ -50,9 +50,10 @@
 #define VERSION "0.2.1"
 #define AUTHOR "Jonathan Tseng"
 
-#if defined(_MSC_VER)
-#define USE_POPCNT // POPCOUNT ability is assumed for MSVC; change this if this isn't the case
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
 #include <time.h>
 #else
@@ -61,6 +62,7 @@
 
 
 #ifdef _MSC_VER
+#define USE_POPCNT // For MSVC, automatically use popcount
 #define PREFETCH(x) _mm_prefetch((char *)(x), _MM_HINT_T0)
 inline int LSB(uint64_t x)
 {
