@@ -91,6 +91,8 @@ void startpos()
             }
             if (m != MOVE_NONE && root_position->isPseudoLegal(m)) {
                 root_position->do_move(m);
+                if (root_position->halfmoveClock == 0)
+                    root_position->historyIndex = 0;
             }
         }
     }
@@ -116,6 +118,8 @@ void cmd_fen()
             }
             if (m != MOVE_NONE && root_position->isPseudoLegal(m)) {
                 root_position->do_move(m);
+            if (root_position->halfmoveClock == 0)
+                root_position->historyIndex = 0;
             }
         }
     }

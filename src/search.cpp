@@ -349,7 +349,7 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
 
         bool isTactical = (pos->isTactical(m));
 
-        if (!isTactical && counter < 0 && followup < 0)
+        if (moveCount > 1 && !isTactical && counter < 0 && followup < 0)
             continue;
 
         pos->do_move(m);
