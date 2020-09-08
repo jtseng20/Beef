@@ -866,7 +866,7 @@ void *aspiration_thread(void *t)
         {
             score = alphaBeta(thread, info, depth, alpha, beta);
 
-            if (is_timeout && depth > 1)
+            if (is_timeout)
             {
                 break;
             }
@@ -971,25 +971,25 @@ void* think (void *p)
         return NULL;
     }
 
-    //std::thread *threads = new std::thread[num_threads];
-    pthread_t threads[num_threads];
+    std::thread *threads = new std::thread[num_threads];
+    //pthread_t threads[MAX_THREADS];
     initialize_nodes();
 
     is_searching = true;
 
     for (int i = 0; i < num_threads; i++)
     {
-        //threads[i] = std::thread(aspiration_thread, get_thread(i));
-        pthread_create(&threads[i], NULL, &aspiration_thread, get_thread(i));
+        threads[i] = std::thread(aspiration_thread, get_thread(i));
+        //pthread_create(&threads[i], NULL, &aspiration_thread, get_thread(i));
     }
 
     for (int i = 0; i < num_threads; i++)
     {
-        //threads[i].join();
-        pthread_join(threads[i], NULL);
+        threads[i].join();
+        //pthread_join(threads[i], NULL);
     }
 
-    //delete[] threads;
+    delete[] threads;
 
     while (is_pondering) {}
 

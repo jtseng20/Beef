@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <iterator>
 #include <thread>
-#include <pthread.h>
+//#include <pthread.h>
 #include <map>
 #include <array>
 #include <bitset>
@@ -48,7 +48,7 @@
 
 
 #define NAME "Beef"
-#define VERSION "0.2.1"
+#define VERSION "0.2.2"
 #define AUTHOR "Jonathan Tseng"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -63,7 +63,7 @@
 
 
 #ifdef _MSC_VER
-#define USE_POPCNT // For MSVC, automatically use popcount
+//#define USE_POPCNT // For MSVC, automatically use popcount
 #define PREFETCH(x) _mm_prefetch((char *)(x), _MM_HINT_T0)
 inline int LSB(uint64_t x)
 {

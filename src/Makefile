@@ -15,7 +15,13 @@ $(EXE): $(OBJECTS)
 	$(CC) $(CFLAGS) $(OPT) -c $^ -o $@ -pthread
 
 nopopcnt:
-	$(CC) $(NOPOPFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_nopopcnt -pthread
+	$(CC) $(NOPOPFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_nopopcnt -lpthread
 
 release: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OPT) $^ -o $(EXE)_$(VERSION)_popcnt -pthread
+	$(CC) $(CFLAGS) $(OPT) $^ -o $(EXE)_$(VERSION)_popcnt -lpthread
+	
+releasewindows:
+	$(CC) $(CFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_popcnt.exe -lpthread
+	
+nopopcntwindows:
+	$(CC) $(NOPOPFLAGS) -static $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_nopopcnt -lpthread
