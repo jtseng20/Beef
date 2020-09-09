@@ -3,7 +3,7 @@ CFLAGS  = -DNDEBUG -Wall -Wcast-qual -Wextra -Wshadow -pedantic -std=c++11 -m64 
 NOPOPFLAGS  = -DNDEBUG -Wall -Wcast-qual -Wextra -Wshadow -pedantic -std=c++11 -m64
 EXE  = Beef
 OPT     = -O3
-VERSION = 0.2.1
+VERSION = 0.2.2
 OBJECTS = board.o eval.o evaltune.o magic.o main.o movegen.o polyglot.o position.o psqt.o search.o syzygy.o thread.o time.o tt.o uci.o util.o weights.o pyrrhic/tbprobe.o
 
 all: $(EXE)
@@ -21,7 +21,7 @@ release: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OPT) $^ -o $(EXE)_$(VERSION)_popcnt -lpthread
 	
 releasewindows:
-	$(CC) $(CFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_popcnt.exe -lpthread
+	$(CC) $(CFLAGS) -static $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_popcnt.exe -lpthread
 	
 nopopcntwindows:
 	$(CC) $(NOPOPFLAGS) -static $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_nopopcnt -lpthread

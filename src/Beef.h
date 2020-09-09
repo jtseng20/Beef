@@ -63,7 +63,7 @@
 
 
 #ifdef _MSC_VER
-//#define USE_POPCNT // For MSVC, automatically use popcount
+#define USE_POPCNT // For MSVC, automatically use popcount
 #define PREFETCH(x) _mm_prefetch((char *)(x), _MM_HINT_T0)
 inline int LSB(uint64_t x)
 {
