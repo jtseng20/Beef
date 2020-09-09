@@ -49,8 +49,6 @@ int squareDistance[64][64];
 int reductions[2][64][64];
 uint8_t PopCnt16[1 << 16];
 
-materialhashEntry materialHashTable[9*3*3*3*2*9*3*3*3*2];
-
 //Fancy Magic Bitboards
 U64 Battacks[5248];
 U64 Rattacks[102400];

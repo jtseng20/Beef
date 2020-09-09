@@ -552,14 +552,14 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
     bool improving = !in_check && ply > 1 && (info->staticEval >= (info-2)->staticEval || (info-2)->staticEval == UNDEFINED);
 
     ///Reverse Futility Pruning
-    if (!in_check && !is_pv && depth < 9 && info->staticEval - 80 * depth >= (beta - 30*improving) && pos->nonPawn[pos->activeSide])
+    if (!in_check && !is_pv && depth < 9 && info->staticEval - 80 * depth >= (beta - improvementValue*improving) && pos->nonPawn[pos->activeSide])
     {
         return info->staticEval;
     }
 
     ///Null Move
     if ( !in_check && !is_pv && thread->doNMP && !is_null &&
-        excluded_move == MOVE_NONE && info->staticEval >= (beta - 30*improving) && depth > 2 && pos->nonPawn[pos->activeSide] &&
+        excluded_move == MOVE_NONE && info->staticEval >= (beta - improvementValue*improving) && depth > 2 && pos->nonPawn[pos->activeSide] &&
         (!ttHit || !(flag & FLAG_ALPHA) || hashScore >= beta))
     {
 // TODO (drstrange767#1#): tune R
