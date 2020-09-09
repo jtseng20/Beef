@@ -200,8 +200,8 @@ Score rookFile[2] = {S(34,-1), S(50,4)};
 
 Score battery = S(10,-10);
 Score kingProtector = S(3,-3);
-Score outpostBonus = S(23,9);
-Score reachableOutpost = S(11,23);
+Score outpostBonus[2][2] = {{S(14,8), S(31,16)}, {S(50,10), S(62,29)}};
+Score reachableOutpost[2] = {S(0,8), S(18,22)};
 Score minorThreat[7] = {S(0,0), S(6,17), S(24,43), S(35,31), S(65,1), S(54,-36), S(90,648)};
 
 Score rookThreat[7] = {S(0,0), S(-7,21), S(21,28), S(31,40), S(20,-17), S(79,-63), S(626,809)};

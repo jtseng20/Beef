@@ -534,11 +534,19 @@ void init_minorTerms(vector<Parameter>& p)
     p.push_back({ &kingProtector, nullptr, mg_value(kingProtector), 0, 1, 0, 0 });
     p.push_back({ &kingProtector, nullptr, eg_value(kingProtector), 1, 1, 0, 0 });
 
-    p.push_back({ &outpostBonus, nullptr, mg_value(outpostBonus), 0, 1, 0, 0 });
-    p.push_back({ &outpostBonus, nullptr, eg_value(outpostBonus), 1, 1, 0, 0 });
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 2; j++)
+        {
+            p.push_back({ &outpostBonus[i][j], nullptr, mg_value(outpostBonus[i][j]), 0, 1, 0, 0 });
+            p.push_back({ &outpostBonus[i][j], nullptr, eg_value(outpostBonus[i][j]), 1, 1, 0, 0 });
+        }
 
-    p.push_back({ &reachableOutpost, nullptr, mg_value(reachableOutpost), 0, 1, 0, 0 });
-    p.push_back({ &reachableOutpost, nullptr, eg_value(reachableOutpost), 1, 1, 0, 0 });
+
+    for (int i = 0; i < 2; i++)
+    {
+        p.push_back({ &reachableOutpost[i], nullptr, mg_value(reachableOutpost[i]), 1, 0, 0 });
+        p.push_back({ &reachableOutpost[i], nullptr, eg_value(reachableOutpost[i]), 1, 1, 0, 0 });
+    }
 
     p.push_back({ &bishopOpposerBonus, nullptr, mg_value(bishopOpposerBonus), 0, 1, 0, 0 });
     p.push_back({ &bishopOpposerBonus, nullptr, eg_value(bishopOpposerBonus), 1, 1, 0, 0 });
@@ -593,50 +601,6 @@ void init_queenTerms(vector<Parameter>& p)
         p.push_back({ &piece_bonus[QUEEN][j], nullptr, mg_value(piece_bonus[QUEEN][j]), 0, 1, 0, 0 });
         p.push_back({ &piece_bonus[QUEEN][j], nullptr, eg_value(piece_bonus[QUEEN][j]), 1, 1, 0, 0 });
     }
-}
-
-
-void printImbalance()
-{
-    printf("int my_pieces[5][5] = {");
-    for (int i = 0; i < 5; i++)
-    {
-        printf("\n    {");
-        for (int j = 0; j < 5; j++)
-        {
-            if (j <= i)
-                printf("%4d", my_pieces[i][j]);
-            else
-                printf("     ");
-
-            if (j < i)
-                printf(",");
-        }
-        printf("}");
-        if (i < 4)
-            printf(", ");
-    }
-    printf("\n};\n\n");
-
-    printf("int opponent_pieces[5][5] = {");
-    for (int i = 0; i < 5; i++)
-    {
-        printf("\n    {");
-        for (int j = 0; j < 5; j++)
-        {
-            if (j <= i)
-                printf("%4d", opponent_pieces[i][j]);
-            else
-                printf("     ");
-
-            if (j < i)
-                printf(",");
-        }
-        printf("}");
-        if (i < 4)
-            printf(", ");
-    }
-    printf("\n};\n\n");
 }
 
 
@@ -933,9 +897,30 @@ void printParams()
 
     printf("Score battery = S(%d,%d);\n", mg_value(battery), eg_value(battery));
     printf("Score kingProtector = S(%d,%d);\n", mg_value(kingProtector), eg_value(kingProtector));
-    printf("Score outpostBonus = S(%d,%d);\n", mg_value(outpostBonus), eg_value(outpostBonus));
+    printf("Score outpostBonus[2][2] = {");
+    for (int i = 0; i < 2; i++)
+    {
+        printf("{");
+        for (int j = 0; j < 2; j++)
+        {
+            printf("S(%d,%d)", mg_value(outpostBonus[i][j]), eg_value(outpostBonus[i][j]));
+            if (j < 1)
+                printf(", ");
+        }
+        printf("}");
+        if (i < 1)
+            printf(", ");
+    }
+    printf("};\n");
 
-    printf("Score reachableOutpost = S(%d,%d);\n", mg_value(reachableOutpost), eg_value(reachableOutpost));
+    printf("Score reachableOutpost[2] = {");
+    for (int i = 0; i < 2; i++)
+    {
+        printf("S(%d,%d)", mg_value(reachableOutpost[i]), eg_value(reachableOutpost[i]));
+        if (i < 1)
+            printf(", ");
+    }
+    printf("};\n");
 
     printf("Score minorThreat[7] = {");
     for (int i = 0; i < 7; i++)
@@ -1065,8 +1050,13 @@ void testThings()
 
 void initAll(vector <Parameter>& params)
 {
-    init_mobilityTerms(params);
+    for (int i = 0; i < 2; i++)
+    {
+        params.push_back({ &reachableOutpost[i], nullptr, mg_value(reachableOutpost[i]), 1, 0, 0 });
+        params.push_back({ &reachableOutpost[i], nullptr, eg_value(reachableOutpost[i]), 1, 1, 0, 0 });
+    }
 #if 0
+    init_mobilityTerms(params);
     init_pieceWeights(params);
     init_imbalance_weights(params);
     init_passedTerms(params);
@@ -1148,7 +1138,7 @@ void tune()
     double newError;
     cout << "Training error: " << bestError << endl;
 
-    for (int epoch = 0; epoch < 4; epoch++)
+    for (int epoch = 0; epoch < 2; epoch++)
     {
         for (unsigned i = 0; i < params.size(); i++)
         {

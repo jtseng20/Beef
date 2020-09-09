@@ -254,7 +254,7 @@ void debug()
 
 void uci() {
     cout << "id name "<< NAME << " " << VERSION << endl << "id author " << AUTHOR << endl;
-    cout << "option name Hash type spin default 128 min 1 max 65536" << endl;
+    cout << "option name Hash type spin default "<< TRANSPOSITION_MB <<" min 1 max 65536" << endl;
     cout << "option name ClearHash type button" << endl;
     cout << "option name Threads type spin default 1 min 1 max " << MAX_THREADS << endl;
     cout << "option name MoveOverhead type spin default 100 min 0 max 5000" << endl;

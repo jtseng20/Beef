@@ -398,9 +398,9 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             U64 outpostSquares = outpostRanks & ~pawntte->attackSpans[opponent];
 
             if (outpostSquares & BITSET(sq))
-                out += outpostBonus * (type == KNIGHT ? 2 : 1);
-            else if (type == KNIGHT && outpostSquares & attackedSquares[pc] & ~pos.occupiedBB[side])
-                out += reachableOutpost;
+                out += outpostBonus[bool(attackedSquares[make_piece(side, PAWN)] & BITSET(sq))][type == KNIGHT];
+            else if (outpostSquares & attacks & ~pos.occupiedBB[side])
+                out += reachableOutpost[type == KNIGHT];
 
             if (type == BISHOP)
             {
