@@ -9,10 +9,10 @@ OBJECTS = board.o eval.o evaltune.o magic.o main.o movegen.o polyglot.o position
 all: $(EXE)
 
 $(EXE): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OPT) $^ -o $@ -pthread
+	$(CC) $(CFLAGS) $(OPT) $^ -o $@ -lpthread
 
 %.o: %.cpp
-	$(CC) $(CFLAGS) $(OPT) -c $^ -o $@ -pthread
+	$(CC) $(CFLAGS) $(OPT) -c $^ -o $@ -lpthread
 
 nopopcnt:
 	$(CC) $(NOPOPFLAGS) $(OPT) *.cpp pyrrhic/tbprobe.cpp -o $(EXE)_$(VERSION)_nopopcnt -lpthread

@@ -18,13 +18,19 @@
 
 #include "Beef.h"
 
-int main()
+int main(int argc, char **argv)
 {
 	Position::init();
 	get_ready();
 	init_tt();
-	//init_imbalance();
 	book.init(openingBookPath);
+
+	if (argc > 1 && strstr(argv[1], "bench"))
+    {
+        bench();
+        exit(EXIT_SUCCESS);
+    }
+
 
     #ifdef __TUNE__
     //find_optimal_k();

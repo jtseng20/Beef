@@ -715,7 +715,7 @@ unsigned char AlgebraicToIndex(string s);
 vector<string> SplitString(const char* c);
 void printBits(U64 x);
 
-#define TRANSPOSITION_MB 128 // default size
+#define TRANSPOSITION_MB 64 // default size
 constexpr int PAWN_ENTRIES = 16384; // default size
 constexpr int PAWN_HASH_SIZE_MASK = PAWN_ENTRIES - 1;
 

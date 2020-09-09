@@ -926,7 +926,7 @@ void *aspiration_thread(void *t)
 
         if ( depth >= 6 && !is_movetime)
         {
-            if (failed_low) // if the score is high, bump up time
+            if (failed_low) // if the score is low, bump up time
             {
                 ideal_usage = ideal_usage * (200 + min(depth, 20)) / 200;
             }
@@ -1013,7 +1013,6 @@ void bench()
 {
     uint64_t nodes = 0;
     int benchStart = getRealTime();
-    int tmp_ideal_usage = ideal_usage;
     is_timeout = false;
     globalLimits.movesToGo = 0;
     globalLimits.totalTimeLeft = 0;
@@ -1034,7 +1033,6 @@ void bench()
     }
 
     int time_taken = getRealTime() - benchStart;
-    ideal_usage = tmp_ideal_usage;
 
     std::cout << "\n------------------------\n";
     std::cout << "Time  : " << time_taken << std::endl;
