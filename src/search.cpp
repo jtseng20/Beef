@@ -156,8 +156,8 @@ void update_heuristics(Position *pos, searchInfo *info, int bestScore, int beta,
     }
 }
 
-
-bool isDraw(Position *pos) // Check if the position is a forced draw; check if the position is a repetition
+// Check if the position is a forced draw; check if the position is a repetition
+bool isDraw(Position *pos)
 {
     int halfmoveClock = pos->halfmoveClock;
     pos->gameCycle = false;
@@ -270,7 +270,7 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
     }
 
     if (isDraw(pos))
-        return 0;
+        return 1 - (thread->nodes & 2);
 
     bool in_check = (bool)(pos->checkBB);
     if (ply >= MAX_PLY)
@@ -393,12 +393,6 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
     return bestScore;
 }
 
-// Stockfish idea to add small randomness to draw scores
-int draw_score(SearchThread *thread)
-{
-    return 1 - (thread->nodes & 2);
-}
-
 int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int beta)
 {
     if (depth < 1)
@@ -434,7 +428,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
         if (isDraw(pos))
         {
-            return draw_score(thread);
+            return 1 - (thread->nodes & 2);
         }
 
         alpha = max(VALUE_MATED + ply, alpha);

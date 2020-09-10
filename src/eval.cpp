@@ -615,6 +615,11 @@ template <Tracing T> int Eval<T>::value()
         return material->evaluation(pos);
     }
 
+    if (material->endgame_type == DRAW_ENDGAME)
+    {
+        return 1 - (pos.my_thread->nodes & 2);
+    }
+
     pawntte = get_pawntte(pos);
     evaluate_pawns();
 
