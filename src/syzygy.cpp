@@ -41,7 +41,7 @@ static Move convertPyrrhicMove(Position *pos, unsigned result) {
 
 bool tablebasesProbeDTZ(Position *pos, Move *best, Move *ponder) {
 
-    unsigned results[255];
+    unsigned results[256];
     uint64_t white = pos->occupiedBB[WHITE];
     uint64_t black = pos->occupiedBB[BLACK];
 
