@@ -18,6 +18,9 @@
 #ifdef __TUNE__
 #include "Beef.h"
 
+#define RMSProp 1
+#define adam 0
+
 #define tuneMobility 1
 #define tuneWeights 0
 #define tuneImbalance 0
@@ -38,6 +41,8 @@ constexpr double RMS_E = 0.9;
 constexpr double decayrate = 0.93;
 constexpr int decaySteps = 500;
 constexpr int reportSteps = 100;
+constexpr double adam_b1 = 0.9;
+constexpr double adam_b2 = 0.999;
 
 #define NFENS 100000//9999740
 #define NTHREADS 7
@@ -74,8 +79,13 @@ typedef double TVector[NTERMS][2]; // indexed MG, EG
 TVector params; // indexed MG, EG
 int8_t coeffs[NTERMS][2]; // indexed WHITE, BLACK
 TVector deltas = {0}; // indexed MG, EG
+#if RMSProp
 TVector RMS = {0}; // indexed MG, EG
-
+#endif
+#if adam
+TVector adam_m = {0};
+TVector adam_v = {0};
+#endif
 
 double K = 0.912078;
 
@@ -1325,6 +1335,10 @@ void tune()
     //K = find_optimal_k();
     double rate = LR;
 
+    #if adam
+    double mhatMG, mhatEG, vhatMG, vhatEG;
+    #endif
+
     #if 1
     for (int epoch = 0; epoch < EPOCHS; epoch++)
     {
@@ -1337,10 +1351,27 @@ void tune()
 
             for (int i = 0; i < NTERMS; i++)
             {
+                #if RMSProp
                 RMS[i][MG] = RMS_E * RMS[i][MG] + (1 - RMS_E) * pow((K / 200.0) * gradient[i][MG] / BATCHSIZE, 2.0);
                 RMS[i][EG] = RMS_E * RMS[i][EG] + (1 - RMS_E) * pow((K / 200.0) * gradient[i][EG] / BATCHSIZE, 2.0);
                 deltas[i][MG] += (K / 200.0) * (gradient[i][MG] / BATCHSIZE) * (rate / sqrt(1e-8 + RMS[i][MG]));
                 deltas[i][EG] += (K / 200.0) * (gradient[i][EG] / BATCHSIZE) * (rate / sqrt(1e-8 + RMS[i][EG]));
+                #endif
+                #if adam
+                adam_m[i][MG] = adam_b1 * adam_m[i][MG] + (1 - adam_b1) * ((K / 200.0) * gradient[i][MG] / BATCHSIZE);
+                adam_m[i][EG] = adam_b1 * adam_m[i][EG] + (1 - adam_b1) * ((K / 200.0) * gradient[i][EG] / BATCHSIZE);
+
+                adam_v[i][MG] = adam_b2 * adam_v[i][MG] + (1 - adam_b2) * pow((K / 200.0) * gradient[i][MG] / BATCHSIZE, 2.0);
+                adam_v[i][EG] = adam_b2 * adam_v[i][EG] + (1 - adam_b2) * pow((K / 200.0) * gradient[i][EG] / BATCHSIZE, 2.0);
+
+                mhatMG = (adam_m[i][MG]) / (1.0 - pow(adam_b1, epoch+1));
+                mhatEG = (adam_m[i][EG]) / (1.0 - pow(adam_b1, epoch+1));
+                vhatMG = (adam_v[i][MG]) / (1.0 - pow(adam_b2, epoch+1));
+                vhatEG = (adam_v[i][EG]) / (1.0 - pow(adam_b2, epoch+1));
+
+                deltas[i][MG] += (K / 200.0) * (gradient[i][MG] / BATCHSIZE) * (rate * mhatMG / (1e-8 + sqrt(vhatMG)));
+                deltas[i][EG] += (K / 200.0) * (gradient[i][EG] / BATCHSIZE) * (rate * mhatEG / (1e-8 + sqrt(vhatEG)));
+                #endif
             }
         }
 
