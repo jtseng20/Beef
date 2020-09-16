@@ -414,8 +414,6 @@ void run(string s)
         eval();
     if (s == "ponderhit")
         ponderhit();
-    if (s == "tune")
-        tune();
 }
 
 void loop()

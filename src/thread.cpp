@@ -18,10 +18,10 @@
 
 #include "Beef.h"
 
-#ifndef __TUNE__
+#ifndef __TUNE1__
 int num_threads = 1;
 #else
-int num_threads = 6;
+int num_threads = 7;
 #endif
 
 void get_ready() {

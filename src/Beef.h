@@ -20,6 +20,14 @@
 #define BEEF_H_INCLUDED
 #endif // BEEF_H_INCLUDED
 
+#ifdef __TUNE__
+#define TUNERTRACE 1
+#else
+#define TUNERTRACE 0
+#endif // __TUNE__
+
+#define TUNESAFETY 0
+
 #pragma once
 #include <iostream>
 #include <iomanip>
@@ -882,20 +890,20 @@ extern SearchThread* search_threads;
 inline void* get_thread(int thread_id) { return thread_id == 0 ? &main_thread : &search_threads[thread_id - 1]; }
 void clear_threads();
 
-extern int PAWN_MG;
-extern int PAWN_EG;
-extern int KNIGHT_MG;
-extern int KNIGHT_EG;
-extern int BISHOP_MG;
-extern int BISHOP_EG;
-extern int ROOK_MG;
-extern int ROOK_EG;
-extern int QUEEN_MG;
-extern int QUEEN_EG;
-extern int KING_MG;
-extern int KING_EG;
+extern const int PAWN_MG;
+extern const int PAWN_EG;
+extern const int KNIGHT_MG;
+extern const int KNIGHT_EG;
+extern const int BISHOP_MG;
+extern const int BISHOP_EG;
+extern const int ROOK_MG;
+extern const int ROOK_EG;
+extern const int QUEEN_MG;
+extern const int QUEEN_EG;
+extern const int KING_MG;
+extern const int KING_EG;
 
-extern Score piece_bonus[7][64];
+extern const Score piece_bonus[7][64];
 
 extern int pieceValues[2][14];
 
@@ -908,79 +916,80 @@ constexpr int SCALE_HARDTOWIN = 3;
 constexpr int SCALE_ONEPAWN = 10;
 constexpr int SCALE_NORMAL = 32;
 
-extern Score isolated_penalty[2];
-extern Score isolated_penaltyAH[2];
+extern const Score isolated_penalty[2];
+extern const Score isolated_penaltyAH[2];
 
-extern Score doubled_penalty[2];
-extern Score doubled_penalty_undefended[2];
+extern const Score doubled_penalty[2];
+extern const Score doubled_penalty_undefended[2];
 
-extern Score isolated_doubled_penalty[2];
-extern Score isolated_doubled_penaltyAH[2];
+extern const Score isolated_doubled_penalty[2];
+extern const Score isolated_doubled_penaltyAH[2];
 
-extern Score backward_penalty[2];
+extern const Score backward_penalty[2];
 
 //connected bonus [opposed][phalanx][rank]
-extern Score connected_bonus[2][2][8];
+extern const Score connected_bonus[2][2][8];
 
-extern Score passedRankBonus[8];
+extern const Score passedRankBonus[8];
 
-extern Score passedUnsafeBonus[2][8];
+extern const Score passedUnsafeBonus[2][8];
 
-extern Score passedBlockedBonus[2][8];
-
-
-extern Score knightMobilityBonus[9];
-
-extern Score bishopMobilityBonus[14];
-
-extern Score rookMobilityBonus[15];
-
-extern Score queenMobilityBonus[28];
+extern const Score passedBlockedBonus[2][8];
 
 
-extern int attackerWeights[7];
-extern int checkPenalty[7];
-extern int unsafeCheckPenalty[7];
-extern int queenContactCheck;
-extern int kingDangerBase;
-extern int kingflankAttack;
-extern int kingringAttack;
-extern int kingpinnedPenalty;
-extern int kingweakPenalty;
-extern int pawnDistancePenalty;
-extern int kingShieldBonus;
-extern int noQueen;
+extern const Score knightMobilityBonus[9];
+
+extern const Score bishopMobilityBonus[14];
+
+extern const Score rookMobilityBonus[15];
+
+extern const Score queenMobilityBonus[28];
 
 
-extern int kingShield[4][8];
+extern const int attackerWeights[7];
+extern const int checkPenalty[7];
+extern const int unsafeCheckPenalty[7];
+extern const int queenContactCheck;
+extern const int kingDangerBase;
+extern const int kingringAttack;
+extern const int kingpinnedPenalty;
+extern const int kingweakPenalty;
+extern const int kingShieldBonus;
+extern const int noQueen;
 
-extern int pawnStormBlocked[4][8];
+extern const Score kingflankAttack;
+extern const Score pawnDistancePenalty;
 
-extern int pawnStormFree[4][8];
 
-extern int bishop_pair;
+extern const int kingShield[4][8];
 
-extern Score bishopPawns;
-extern Score rookFile[2];
-extern Score battery;
-extern Score kingProtector;
-extern Score outpostBonus[2][2];
-extern Score reachableOutpost[2];
-extern Score minorThreat[7];
-extern Score rookThreat[7];
-extern Score kingThreat;
-extern Score kingMultipleThreat;
-extern Score pawnPushThreat;
-extern Score safePawnThreat;
-extern Score hangingPiece;
-extern Score defendedRookFile;
-extern Score rank7Rook;
+extern const int pawnStormBlocked[4][8];
 
-extern Score passedFriendlyDistance[8];
-extern Score passedEnemyDistance[8];
+extern const int pawnStormFree[4][8];
 
-extern Score tarraschRule_friendly[8];
-extern Score tarraschRule_enemy;
+extern const int bishop_pair;
+
+extern const Score bishopPawns;
+extern const Score rookFile[2];
+extern const Score battery;
+extern const Score kingProtector;
+extern const Score outpostBonus[2][2];
+extern const Score reachableOutpost[2];
+extern const Score minorThreat[7];
+extern const Score rookThreat[7];
+extern const Score kingThreat;
+extern const Score kingMultipleThreat;
+extern const Score pawnPushThreat;
+extern const Score safePawnThreat;
+extern const Score hangingPiece;
+extern const Score defendedRookFile;
+extern const Score rank7Rook;
+
+extern const Score passedFriendlyDistance[8];
+extern const Score passedEnemyDistance[8];
+
+extern const Score tarraschRule_friendly[8];
+extern const Score tarraschRule_enemy;
 
 constexpr int tempo = 30;
 
@@ -1056,9 +1065,9 @@ constexpr U64 knightOpposingBishop_leftRight[64] =
     0, 0, 0, BITSET(A8), BITSET(H8), 0, 0, 0
 };
 
-extern Score bishopOpposerBonus;
-extern Score trappedBishopPenalty;
-extern Score veryTrappedBishopPenalty;
+extern const Score bishopOpposerBonus;
+extern const Score trappedBishopPenalty;
+extern const Score veryTrappedBishopPenalty;
 
 
 struct Parameter
@@ -1076,8 +1085,8 @@ struct Parameter
 };
 
 //imbalance weights
-extern int my_pieces[5][5];
-extern int opponent_pieces[5][5];
+extern const int my_pieces[5][5];
+extern const int opponent_pieces[5][5];
 
 enum endgameType { NORMAL_ENDGAME, DRAW_ENDGAME };
 
@@ -1085,7 +1094,7 @@ inline materialhashEntry* get_materialEntry(const Position& p) { return &p.my_th
 
 void init_imbalance();
 int qSearch(SearchThread* thread, searchInfo* info, int depth, int alpha, const int beta);
-void find_optimal_k();
+//void find_optimal_k();
 void testThings();
 void tune();
 
@@ -1311,3 +1320,98 @@ const std::string benchmarks[36] = {
 
 unsigned tablebasesProbeWDL(Position *pos, int depth, int height);
 bool tablebasesProbeDTZ(Position *pos, Move *best, Move *ponder);
+
+struct tunerTrace
+{
+    int piece_bonus[2][7][64];
+    int piece_values[2][6];
+
+    int isolated_penalty[2][2];
+    int isolated_penaltyAH[2][2];
+
+    int doubled_penalty[2][2];
+    int doubled_penalty_undefended[2][2];
+
+    int isolated_doubled_penalty[2][2];
+    int isolated_doubled_penaltyAH[2][2];
+
+    int backward_penalty[2][2];
+
+    int connected_bonus[2][2][2][8];
+
+    int passedRankBonus[2][8];
+
+    int passedUnsafeBonus[2][2][8];
+
+    int passedBlockedBonus[2][2][8];
+
+
+    int knightMobilityBonus[2][9];
+
+    int bishopMobilityBonus[2][14];
+
+    int rookMobilityBonus[2][15];
+
+    int queenMobilityBonus[2][28];
+
+    int kingflankAttack[2];
+    int pawnDistancePenalty[2];
+
+    // Danger terms ( not linear )
+
+    #if TUNESAFETY
+    int attackerWeights[2][7];
+    int checkPenalty[2][7];
+    int unsafeCheckPenalty[2][7];
+    int queenContactCheck[2];
+    int kingDangerBase[2];
+    int kingringAttack[2];
+    int kingpinnedPenalty[2];
+    int kingweakPenalty[2];
+    int kingShieldBonus[2];
+    int noQueen[2];
+
+
+    int kingShield[2][4][8];
+
+    int pawnStormBlocked[2][4][8];
+
+    int pawnStormFree[2][4][8];
+    #endif
+
+    // end Danger terms
+
+    int bishopPawns[2];
+    int rookFile[2][2];
+    int battery[2];
+    int kingProtector[2];
+    int outpostBonus[2][2][2];
+    int reachableOutpost[2][2];
+    int minorThreat[2][7];
+    int rookThreat[2][7];
+    int kingThreat[2];
+    int kingMultipleThreat[2];
+    int pawnPushThreat[2];
+    int safePawnThreat[2];
+    int hangingPiece[2];
+    int defendedRookFile[2];
+    int rank7Rook[2];
+
+    int passedFriendlyDistance[2][8];
+    int passedEnemyDistance[2][8];
+
+    int tarraschRule_friendly[2][8];
+    int tarraschRule_enemy[2];
+
+    int bishopOpposerBonus[2];
+    int trappedBishopPenalty[2];
+    int veryTrappedBishopPenalty[2];
+
+    //imbalance weights ( not really linear but actually linear )
+    int my_pieces[2][5][5];
+    int opponent_pieces[2][5][5];
+    int bishop_pair[2];
+
+    Score originalScore;
+    double scale;
+};

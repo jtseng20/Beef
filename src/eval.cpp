@@ -18,8 +18,8 @@
 
 #include "Beef.h"
 
-
 Score trace_scores[TERM_NB][2];
+tunerTrace Trace;
 
 constexpr int lazyThreshold = 1300;
 
@@ -98,6 +98,13 @@ template <Tracing T> template <Color side> int Eval<T>::pawn_shelter_score(int s
         out += kingShield[f][defendingRank];
         bool blocked = (defendingRank != 0) && defendingRank == stormingRank - 1;
         out -= (blocked) ? pawnStormBlocked[f][stormingRank] : pawnStormFree[f][stormingRank];
+        #if TUNERTRACE and TUNESAFETY
+        Trace.kingShield[side][f][defendingRank]++;
+        if (blocked)
+            Trace.pawnStormBlocked[side][f][stormingRank]--;
+        else
+            Trace.pawnStormFree[side][f][stormingRank]--;
+        #endif // TUNERTRACE
     }
 
     return out;
@@ -184,20 +191,53 @@ template <Tracing T> template <Color side> void Eval<T>::evaluate_pawn_structure
         supported = PAWN_ATTACKS[them][sq] & myPawns;
 
         if (isolated)
+        {
             pawnStructure -= (BITSET(sq) & FileAH) ? isolated_penaltyAH[opposed] : isolated_penalty[opposed];
-        //cout << mg_value(pawnStructure)<<endl;
+            #if TUNERTRACE
+            if (BITSET(sq) & FileAH)
+                Trace.isolated_penaltyAH[side][opposed]--;
+            else
+                Trace.isolated_penalty[side][opposed]--;
+            #endif // TUNERTRACE
+        }
+
         if (backward)
+        {
             pawnStructure -= backward_penalty[opposed];
-        //cout << mg_value(pawnStructure)<<endl;
+            #if TUNERTRACE
+            Trace.backward_penalty[side][opposed]--;
+            #endif // TUNERTRACE
+        }
+
         if (doubled)
+        {
             pawnStructure -= (BITSET(sq) & attackedSquares[make_piece(side, PAWN)]) ? doubled_penalty[opposed] : doubled_penalty_undefended[opposed];
-        //cout << mg_value(pawnStructure)<<endl;
+            #if TUNERTRACE
+            if (BITSET(sq) & attackedSquares[make_piece(side, PAWN)])
+                Trace.doubled_penalty[side][opposed]--;
+            else
+                Trace.doubled_penalty_undefended[side][opposed]--;
+            #endif // TUNERTRACE
+        }
+
         if (isolated && doubled)
+        {
             pawnStructure -= (BITSET(sq) & FileAH) ? isolated_doubled_penaltyAH[opposed] : isolated_doubled_penalty[opposed];
-        //cout << mg_value(pawnStructure)<<endl;
+            #if TUNERTRACE
+            if (BITSET(sq) & FileAH)
+                Trace.isolated_doubled_penaltyAH[side][opposed]--;
+            else
+                Trace.isolated_doubled_penalty[side][opposed]--;
+            #endif // TUNERTRACE
+        }
+
         if (phalanx | supported)
+        {
             pawnStructure += connected_bonus[opposed][bool(phalanx)][RRANK(sq, us)];
-        //cout << mg_value(pawnStructure)<<endl;
+            #if TUNERTRACE
+            Trace.connected_bonus[side][opposed][bool(phalanx)][RRANK(sq,us)]++;
+            #endif // TUNERTRACE
+        }
 
 
         if (!opposed &&
@@ -235,14 +275,34 @@ template <Tracing T> template <Color side> Score Eval<T>::evaluate_passers()
         // King distance from passed pawn
         out += passedFriendlyDistance[r] * squareDistance[pos.kingpos[side]][sq + Up];
         out += passedEnemyDistance[r] * squareDistance[pos.kingpos[opponent]][sq + Up];
+
+        #if TUNERTRACE
+        Trace.passedRankBonus[side][r]++;
+        Trace.passedUnsafeBonus[side][unsafe][r]++;
+        Trace.passedBlockedBonus[side][blocked][r]++;
+        Trace.passedFriendlyDistance[side][r] += squareDistance[pos.kingpos[side]][sq + Up];
+        Trace.passedEnemyDistance[side][r] += squareDistance[pos.kingpos[opponent]][sq + Up];
+        #endif // TUNERTRACE
         // Rooks behind passed pawn
 
         if (r >= 3)
         {
             if (myRooks & pawnBlockerMasks[opponent][sq])
+            {
                 out += tarraschRule_friendly[r];
+                #if TUNERTRACE
+                Trace.tarraschRule_friendly[side][r]++;
+                #endif // TUNERTRACE
+            }
+
             if (opponentRooks & pawnBlockerMasks[opponent][sq])
+            {
                 out -= tarraschRule_enemy;
+                #if TUNERTRACE
+                Trace.tarraschRule_enemy[side]--;
+                #endif // TUNERTRACE
+            }
+
         }
     }
 
@@ -264,16 +324,6 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
     int kingSquare = pos.kingpos[side];
     int pawn_shelter = pawntte->pawnShelter[side];
     outMG += pawn_shelter;
-    if (pos.pieceBB[make_piece(side, PAWN)])
-    {
-        int distance = 0;
-        while (!(distanceRings[kingSquare][distance++] & pos.pieceBB[make_piece(side, PAWN)])) {}
-        outEG -= pawnDistancePenalty * distance;
-    }
-
-    U64 flankAttacks = attackedSquares[opponent] & flank_ranks[side] & flank_files[FILE(kingSquare)];
-    U64 double_flank_attacks = flankAttacks & double_targets[opponent];
-    outMG -= kingflankAttack * (POPCOUNT(flankAttacks) + POPCOUNT(double_flank_attacks));
 
     if (king_attackers_count[side] > (1 - pos.pieceCount[make_piece(opponent, QUEEN)]))
     {
@@ -290,6 +340,19 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
             + bool(pos.blockersForKing[side]) * kingpinnedPenalty
             + POPCOUNT(weak & kingRings[side]) * kingweakPenalty;
 
+        #if TUNERTRACE and TUNESAFETY
+        Trace.kingDangerBase[side]++;
+        Trace.kingShieldBonus[side] -= pawn_shelter/10;
+        Trace.noQueen[side] -= !pos.pieceCount[make_piece(opponent, QUEEN)];
+        for (int i = 0; i < 7; i++)
+        {
+            Trace.attackerWeights[side][i] *= king_attackers_count[side];
+        }
+        Trace.kingringAttack[side] += king_attacks_count[side];
+        Trace.kingpinnedPenalty[side] += bool(pos.blockersForKing[side]);
+        Trace.kingweakPenalty[side] += POPCOUNT(weak & kingRings[side]);
+        #endif // TUNERTRACE
+
         U64 safe = ~pos.occupiedBB[opponent] & (~attackedSquares[side] | (weak & double_targets[opponent]));
 
         U64 occ = pos.occupiedBB[0] | pos.occupiedBB[1];
@@ -301,7 +364,15 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
 
         rookChecks = ((rookSquares)&attackedSquares[make_piece(opponent, ROOK)]);
         if (rookChecks)
+        {
             king_danger += (rookChecks & safe) ? checkPenalty[ROOK] : unsafeCheckPenalty[ROOK];
+            #if TUNERTRACE and TUNESAFETY
+            if (rookChecks & safe)
+                Trace.checkPenalty[side][ROOK]++;
+            else
+                Trace.unsafeCheckPenalty[side][ROOK]++;
+            #endif // TUNERTRACE
+        }
 
         queenChecks = ((rookSquares | bishopSquares)
             & attackedSquares[make_piece(opponent, QUEEN)]
@@ -311,10 +382,23 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
         if (queenChecks)
         {
             if (queenChecks & ~attackedSquares[make_piece(side, KING)])
+            {
                 king_danger += (queenChecks & safe) ? checkPenalty[QUEEN] : unsafeCheckPenalty[QUEEN];
+                #if TUNERTRACE and TUNESAFETY
+                if (queenChecks & safe)
+                    Trace.checkPenalty[side][QUEEN]++;
+                else
+                    Trace.unsafeCheckPenalty[side][QUEEN]++;
+                #endif // TUNERTRACE
+            }
 
             if (queenChecks & attackedSquares[make_piece(side, KING)] & double_targets[opponent] & weak)
+            {
                 king_danger += queenContactCheck;
+                #if TUNERTRACE and TUNESAFETY
+                Trace.queenContactCheck[side]++;
+                #endif // TUNERTRACE
+            }
         }
 
         bishopChecks = ((bishopSquares)
@@ -322,13 +406,29 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
             & ~queenChecks);
 
         if (bishopChecks)
+        {
             king_danger += (bishopChecks & safe) ? checkPenalty[BISHOP] : unsafeCheckPenalty[BISHOP];
+            #if TUNERTRACE and TUNESAFETY
+            if (bishopChecks & safe)
+                Trace.checkPenalty[side][BISHOP]++;
+            else
+                Trace.unsafeCheckPenalty[side][BISHOP]++;
+            #endif // TUNERTRACE
+        }
 
         knightChecks = ((knightSquares)
             &attackedSquares[make_piece(opponent, KNIGHT)]);
 
         if (knightChecks)
+        {
             king_danger += (knightChecks & safe) ? checkPenalty[KNIGHT] : unsafeCheckPenalty[KNIGHT];
+            #if TUNERTRACE and TUNESAFETY
+            if (knightChecks & safe)
+                Trace.checkPenalty[side][KNIGHT]++;
+            else
+                Trace.unsafeCheckPenalty[side][KNIGHT]++;
+            #endif // TUNERTRACE
+        }
 
         if (king_danger > 0)
         {
@@ -337,12 +437,31 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
         }
     }
 
-    if (T)
+    Score out = S(outMG, outEG);
+
+    if (pos.pieceBB[make_piece(side, PAWN)])
     {
-        trace_scores[KING_SAFETY][side] = S(outMG, outEG);
+        int distance = 0;
+        while (!(distanceRings[kingSquare][distance++] & pos.pieceBB[make_piece(side, PAWN)])) {}
+        out -= pawnDistancePenalty * distance;
+        #if TUNERTRACE
+        Trace.pawnDistancePenalty[side] -= distance;
+        #endif // TUNERTRACE
     }
 
-    return S(outMG, outEG);
+    U64 flankAttacks = attackedSquares[opponent] & flank_ranks[side] & flank_files[FILE(kingSquare)];
+    U64 double_flank_attacks = flankAttacks & double_targets[opponent];
+    out -= kingflankAttack * (POPCOUNT(flankAttacks) + POPCOUNT(double_flank_attacks));
+    #if TUNERTRACE
+    Trace.kingflankAttack[side] -= (POPCOUNT(flankAttacks) + POPCOUNT(double_flank_attacks));
+    #endif // TUNERTRACE
+
+    if (T)
+    {
+        trace_scores[KING_SAFETY][side] = out;
+    }
+
+    return out;
 }
 
 template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evaluate_piece()
@@ -354,23 +473,7 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
     constexpr U64 outpostRanks = outpost_ranks[side];
     constexpr Color opponent = ~side;
     int kingSquare = pos.kingpos[side];
-    U64 attacks, kingAttacks;//, good_captures;
-
-    /*switch (type)
-    {
-    case BISHOP:
-        good_captures = pos.pieceBB[make_piece(opponent, BISHOP)] | pos.pieceBB[make_piece(opponent, KNIGHT)] | pos.pieceBB[make_piece(opponent, ROOK)] | pos.pieceBB[make_piece(opponent, QUEEN)];
-        break;
-    case KNIGHT:
-        good_captures = pos.pieceBB[make_piece(opponent, BISHOP)] | pos.pieceBB[make_piece(opponent, KNIGHT)] | pos.pieceBB[make_piece(opponent, ROOK)] | pos.pieceBB[make_piece(opponent, QUEEN)];
-        break;
-    case ROOK:
-        good_captures = pos.pieceBB[make_piece(opponent, ROOK)] | pos.pieceBB[make_piece(opponent, QUEEN)];
-        break;
-    case QUEEN:
-        good_captures = pos.pieceBB[make_piece(opponent, QUEEN)];
-        break;
-    }*/
+    U64 attacks, kingAttacks;
 
     while (pieces)
     {
@@ -388,6 +491,9 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             king_attackers_count[opponent] ++;
             king_attackers_weight[opponent] += attackerWeights[pc >> 1];
             king_attacks_count[opponent] += POPCOUNT(kingAttacks);
+            #if TUNERTRACE and TUNESAFETY
+            Trace.attackerWeights[side][pc >> 1]++;
+            #endif // TUNERTRACE
         }
 
         double_targets[side] |= attackedSquares[side] & attacks;
@@ -398,9 +504,19 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             U64 outpostSquares = outpostRanks & ~pawntte->attackSpans[opponent];
 
             if (outpostSquares & BITSET(sq))
+            {
                 out += outpostBonus[bool(attackedSquares[make_piece(side, PAWN)] & BITSET(sq))][type == KNIGHT];
+                #if TUNERTRACE
+                Trace.outpostBonus[side][bool(attackedSquares[make_piece(side, PAWN)] & BITSET(sq))][type == KNIGHT]++;
+                #endif // TUNERTRACE
+            }
             else if (outpostSquares & attacks & ~pos.occupiedBB[side])
+            {
                 out += reachableOutpost[type == KNIGHT];
+                #if TUNERTRACE
+                Trace.reachableOutpost[side][type == KNIGHT]++;
+                #endif // TUNERTRACE
+            }
 
             if (type == BISHOP)
             {
@@ -409,20 +525,42 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
 
                 U64 pawns = pos.pieceBB[WPAWN] | pos.pieceBB[BPAWN];
                 if (pawns & trappedBishop[side][sq])
+                {
                     out -= (pawns & veryTrappedBishop[sq]) ? veryTrappedBishopPenalty : trappedBishopPenalty;
+                    #if TUNERTRACE
+                    if (pawns & veryTrappedBishop[sq])
+                        Trace.veryTrappedBishopPenalty[side]++;
+                    else
+                        Trace.trappedBishopPenalty[side]++;
+                    #endif // TUNERTRACE
+                }
 
                 // TODO (drstrange767#1#): try 2x for knights on rim, try removing leftRight, etc
                 if (pos.pieceBB[make_piece(opponent, KNIGHT)] & (knightOpposingBishop[side][sq]))
+                {
                     out += bishopOpposerBonus;
+                    #if TUNERTRACE
+                    Trace.bishopOpposerBonus[side]++;
+                    #endif // TUNERTRACE
+                }
 
                 mobility[side] += bishopMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
+                #if TUNERTRACE
+                Trace.bishopMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+                #endif // TUNERTRACE
             }
             else // KNIGHT
             {
                 mobility[side] += knightMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
+                #if TUNERTRACE
+                Trace.knightMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+                #endif // TUNERTRACE
             }
 
             out -= kingProtector * squareDistance[sq][kingSquare];
+            #if TUNERTRACE
+            Trace.kingProtector[side] -= squareDistance[sq][kingSquare];
+            #endif // TUNERTRACE
         }
 
         if (type == ROOK)
@@ -430,23 +568,55 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             if (pawntte->semiopenFiles[side] & (1 << FILE(sq)))
             {
                 if (pawntte->semiopenFiles[opponent] & (1 << FILE(sq))) // open file
+                {
                     out += rookFile[1];
+                    #if TUNERTRACE
+                    Trace.rookFile[side][1]++;
+                    #endif // TUNERTRACE
+                }
+
                 else // semiopen defended / not defended
+                {
                     out += (attackedSquares[make_piece(opponent, PAWN)] & pos.pieceBB[make_piece(opponent, PAWN)] & FileBB[FILE(sq)]) ? defendedRookFile : rookFile[0];
+                    #if TUNERTRACE
+                    if (attackedSquares[make_piece(opponent, PAWN)] & pos.pieceBB[make_piece(opponent, PAWN)] & FileBB[FILE(sq)])
+                        Trace.defendedRookFile[side]++;
+                    else
+                        Trace.rookFile[side][0]++;
+                    #endif // TUNERTRACE
+                }
             }
 
             if (FileBB[FILE(sq)] & (pos.pieceBB[WQUEEN] | pos.pieceBB[BQUEEN]))
+            {
                 out += battery;
+                #if TUNERTRACE
+                Trace.battery[side]++;
+                #endif // TUNERTRACE
+            }
+
 
             if (RRANK(sq, side) == 6 && RRANK(pos.kingpos[opponent], side) == 7)
+            {
                 out += rank7Rook;
+                #if TUNERTRACE
+                Trace.rank7Rook[side]++;
+                #endif // TUNERTRACE
+            }
+
 
             mobility[side] += rookMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
+            #if TUNERTRACE
+            Trace.rookMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+            #endif // TUNERTRACE
         }
 
         if (type == QUEEN)
         {
             mobility[side] += queenMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
+            #if TUNERTRACE
+            Trace.queenMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+            #endif // TUNERTRACE
         }
     }
 
@@ -477,6 +647,9 @@ template <Tracing T> template <Color side> Score Eval<T>::evaluate_threats() con
         {
             sq = popLsb(&attacked);
             out += minorThreat[pos.mailbox[sq] >> 1];
+            #if TUNERTRACE
+            Trace.minorThreat[side][pos.mailbox[sq] >> 1]++;
+            #endif // TUNERTRACE
         }
 
         attacked = (pos.pieceBB[make_piece(opponent, QUEEN)] | weak) & (attackedSquares[make_piece(side, ROOK)]);
@@ -484,27 +657,45 @@ template <Tracing T> template <Color side> Score Eval<T>::evaluate_threats() con
         {
             sq = popLsb(&attacked);
             out += rookThreat[pos.mailbox[sq] >> 1];
+            #if TUNERTRACE
+            Trace.rookThreat[side][pos.mailbox[sq] >> 1]++;
+            #endif // TUNERTRACE
         }
 
         attacked = (weak & attackedSquares[make_piece(side, KING)]);
         if (attacked)
         {
             out += MORETHANONE(attacked) ? kingMultipleThreat : kingThreat;
+            #if TUNERTRACE
+            if (MORETHANONE(attacked))
+                Trace.kingMultipleThreat[side]++;
+            else
+                Trace.kingThreat[side]++;
+            #endif // TUNERTRACE
         }
 
         out += hangingPiece * POPCOUNT(weak & (~attackedSquares[opponent] | (nonPawns & double_targets[side])));
+        #if TUNERTRACE
+        Trace.hangingPiece[side] += POPCOUNT(weak & (~attackedSquares[opponent] | (nonPawns & double_targets[side])));
+        #endif // TUNERTRACE
     }
 
     U64 safe = ~attackedSquares[opponent] | attackedSquares[side];
     U64 safePawns = safe & pos.pieceBB[make_piece(side, PAWN)];
     attacked = PAWNATTACKS(side, safePawns) & nonPawns;
     out += safePawnThreat * POPCOUNT(attacked);
+    #if TUNERTRACE
+    Trace.safePawnThreat[side] += POPCOUNT(attacked);
+    #endif // TUNERTRACE
 
     U64 pawnPushes = PAWNPUSH(side, pos.pieceBB[make_piece(side, PAWN)]) & ~occ;
     pawnPushes |= PAWNPUSH(side, pawnPushes & RRank3) & ~occ;
 
     pawnPushes &= ~attackedSquares[opponent] & safe;
     out += pawnPushThreat * POPCOUNT(PAWNATTACKS(side, pawnPushes) & nonPawns);
+    #if TUNERTRACE
+    Trace.pawnPushThreat[side] += POPCOUNT(PAWNATTACKS(side, pawnPushes) & nonPawns);
+    #endif // TUNERTRACE
 
     if (T)
     {
@@ -526,6 +717,10 @@ int imbalance(const Position& pos, Color side)
         for (int pt2 = PAWN; pt2 <= pt1; ++pt2) {
             bonus += pos.pieceCount[make_piece(side, PieceType(pt1))] * (my_pieces[pt1 - 1][pt2 - 1] * pos.pieceCount[make_piece(side, PieceType(pt2))] +
                 opponent_pieces[pt1 - 1][pt2 - 1] * pos.pieceCount[make_piece(~side, PieceType(pt2))]);
+            #if TUNERTRACE
+            Trace.my_pieces[side][pt1 - 1][pt2 - 1] += (pos.pieceCount[make_piece(side, PieceType(pt1))]*pos.pieceCount[make_piece(side, PieceType(pt2))]) / 16;
+            Trace.opponent_pieces[side][pt1 - 1][pt2 - 1] += (pos.pieceCount[make_piece(side, PieceType(pt1))]*pos.pieceCount[make_piece(~side, PieceType(pt2))]) / 16;
+            #endif // TUNERTRACE
         }
     }
 
@@ -564,9 +759,15 @@ materialhashEntry* probeMaterial(const Position& pos)
     // Bishop pair
     if (pos.pieceCount[WBISHOP] > 1) {
         value += bishop_pair;
+        #if TUNERTRACE
+        Trace.bishop_pair[WHITE]++;
+        #endif // TUNERTRACE
     }
     if (pos.pieceCount[BBISHOP] > 1) {
         value -= bishop_pair;
+        #if TUNERTRACE
+        Trace.bishop_pair[BLACK]++;
+        #endif // TUNERTRACE
     }
 
     material->score = S(value, value);
@@ -651,6 +852,11 @@ template <Tracing T> int Eval<T>::value()
 #endif
 
     int phase = material->phase;
+
+    #if TUNERTRACE
+    Trace.originalScore = out; // always positive for white
+    Trace.scale = pos.scaleFactor() / (double)SCALE_NORMAL;
+    #endif // TUNERTRACE
 
     int v = ((mg_value(out) * (256 - phase) + eg_value(out) * phase * pos.scaleFactor() / SCALE_NORMAL) / 256);
 

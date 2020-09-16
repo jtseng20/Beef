@@ -46,16 +46,12 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-fexpensive-optimizations" />
-					<Add option="-flto" />
-					<Add option="-O3" />
+					<Add option="-Og" />
+					<Add option="-g" />
+					<Add option="-fopenmp" />
 					<Add option="-D__TUNE__" />
 					<Add option="-DNDEBUG" />
 				</Compiler>
-				<Linker>
-					<Add option="-flto" />
-					<Add option="-s" />
-				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
@@ -68,7 +64,10 @@
 		<Unit filename="src/Beef.h" />
 		<Unit filename="src/board.cpp" />
 		<Unit filename="src/eval.cpp" />
-		<Unit filename="src/evaltune.cpp" />
+		<Unit filename="src/evaltune.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
 		<Unit filename="src/magic.cpp" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/movegen.cpp" />
@@ -88,6 +87,7 @@
 		<Unit filename="src/thread.cpp" />
 		<Unit filename="src/time.cpp" />
 		<Unit filename="src/tt.cpp" />
+		<Unit filename="src/tuner.cpp" />
 		<Unit filename="src/uci.cpp" />
 		<Unit filename="src/util.cpp" />
 		<Unit filename="src/weights.cpp" />

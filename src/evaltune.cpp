@@ -15,7 +15,7 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
+#ifdef __TUNE1__
 #include "Beef.h"
 #define __quiet__ // using zurichess quiet; else lichess-quiet
 
@@ -31,7 +31,7 @@ unsigned int num_fens = 0;
 #ifdef __quiet__
 double K = 1.121291;
 #else
-double K = 0.226000;
+double K = 1.156892;
 #endif
 
 void fen_split(string s, vector<string>& v)
@@ -93,10 +93,10 @@ void read_file_data() {
             result = 1.0;
         }
         else if (result_str == "Draw") {
-            result = 0.0;
+            result = 0.5;
         }
         else if (result_str == "Black") {
-            result = 0.5;
+            result = 0.0;
         }
         else {
             result = -1.0;
@@ -293,13 +293,16 @@ void init_kingTerms(vector <Parameter>& p)
 
     p.push_back({ nullptr, &queenContactCheck, queenContactCheck, 2, 1, 0, 0 });
     p.push_back({ nullptr, &kingDangerBase, kingDangerBase, 2, 1, 0, 0 });
-    p.push_back({ nullptr, &kingflankAttack, kingflankAttack, 2, 1, 0, 0 });
     p.push_back({ nullptr, &kingringAttack, kingringAttack, 2, 1, 0, 0 });
     p.push_back({ nullptr, &kingpinnedPenalty, kingpinnedPenalty, 2, 1, 0, 0 });
     p.push_back({ nullptr, &kingweakPenalty, kingweakPenalty, 2, 1, 0, 0 });
-    p.push_back({ nullptr, &pawnDistancePenalty, pawnDistancePenalty, 2, 1, 0, 0 });
     p.push_back({ nullptr, &kingShieldBonus, kingShieldBonus, 2, 1, 0, 0 });
     p.push_back({ nullptr, &noQueen, noQueen, 2, 1, 0, 0 });
+
+    p.push_back({ &kingflankAttack, nullptr, mg_value(kingflankAttack), 0, 1, 0, 0 });
+    p.push_back({ &kingflankAttack, nullptr, eg_value(kingflankAttack), 1, 1, 0, 0 });
+    p.push_back({ &pawnDistancePenalty, nullptr, mg_value(pawnDistancePenalty), 0, 1, 0, 0 });
+    p.push_back({ &pawnDistancePenalty, nullptr, eg_value(pawnDistancePenalty), 1, 1, 0, 0 });
 
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 8; j++)
@@ -826,14 +829,14 @@ void printParams()
 
     printf("int queenContactCheck = %d;\n", queenContactCheck);
     printf("int kingDangerBase = %d;\n", kingDangerBase);
-    printf("int kingflankAttack = %d;\n", kingflankAttack);
     printf("int kingringAttack = %d;\n", kingringAttack);
     printf("int kingpinnedPenalty = %d;\n", kingpinnedPenalty);
     printf("int kingweakPenalty = %d;\n", kingweakPenalty);
-    printf("int pawnDistancePenalty = %d;\n", pawnDistancePenalty);
     printf("int kingShieldBonus = %d;\n", kingShieldBonus);
     printf("int noQueen = %d;\n\n", noQueen);
 
+    printf("Score kingflankAttack = S(%d, %d);\n", mg_value(kingflankAttack), eg_value(kingflankAttack));
+    printf("Score pawnDistancePenalty = S(%d, %d);\n", mg_value(pawnDistancePenalty), eg_value(pawnDistancePenalty));
     printf("\n");
 
     printf("int kingShield[4][8] = {");
@@ -1050,12 +1053,7 @@ void testThings()
 
 void initAll(vector <Parameter>& params)
 {
-    for (int i = 0; i < 2; i++)
-    {
-        params.push_back({ &reachableOutpost[i], nullptr, mg_value(reachableOutpost[i]), 1, 0, 0 });
-        params.push_back({ &reachableOutpost[i], nullptr, eg_value(reachableOutpost[i]), 1, 1, 0, 0 });
-    }
-#if 0
+#if 1
     init_mobilityTerms(params);
     init_pieceWeights(params);
     init_imbalance_weights(params);
@@ -1209,3 +1207,5 @@ void tune()
         printParams();
     }
 }
+
+#endif // __TUNE___

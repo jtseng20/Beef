@@ -79,6 +79,7 @@ syzygy/
 *.depend
 *.layout
 *.vcxproj.filters
+*.book
 
 # Chutzpah Test files
 _Chutzpah*

@@ -683,7 +683,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
         }
         ///Extensions
-// TODO (drstrange767#1#): if (depth < 6?) + discoveredCheck
+// TODO (drstrange767#1#): if (depth < 6?) + discoveredCheck // INSIST ON PAWN PUSH EXTENSION
 
         else
         {
@@ -711,17 +711,19 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
         else
         {
             int reduction = 0;
-            if (depth >= 3 && num_moves > 1 && (!isTactical))
+            if (depth >= 3 && num_moves > 1 + isRoot && (!isTactical || pieceValues[EG][pos->capturedPiece] + info->staticEval <= alpha))
             {
                 reduction = lmr(improving, depth, num_moves);
 
                 reduction -= 2*(is_pv);
 
-                if (m == info->killers[0] || m == info->killers[1] || m == movegen.counterMove)
-                    reduction --;
-
-                if (hashMove && pos->isCapture(hashMove))
-                    reduction ++;
+                if (!isTactical)
+                {
+                    if (m == info->killers[0] || m == info->killers[1] || m == movegen.counterMove)
+                        reduction --;
+                    if (hashMove && pos->isCapture(hashMove))
+                        reduction ++;
+                }
 
                 int quietScore = history + counter + followup;
                 reduction -= max(-2, min(quietScore / 8000, 2));

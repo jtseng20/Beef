@@ -18,6 +18,8 @@
 
 #include "Beef.h"
 
+extern tunerTrace Trace;
+
 void Position::readFEN(const char* fen)
 {
     string temp;
@@ -263,6 +265,10 @@ void Position::set_piece_at(int sq, PieceCode pc)
     psqt_score += psq.psqt[pc][sq];
     nonPawn[side] += (nonPawnValue[pc]);
     pieceCount[pc]++;
+    #if TUNERTRACE
+    Trace.piece_bonus[side][pc >> 1][FLIP_SQUARE(side, sq)]++;
+    Trace.piece_values[side][pc >> 1]++;
+    #endif // TUNERTRACE
 }
 
 void Position::remove_piece_at(int sq, PieceCode pc)
@@ -275,6 +281,10 @@ void Position::remove_piece_at(int sq, PieceCode pc)
     psqt_score -= psq.psqt[pc][sq];
     nonPawn[side] -= (nonPawnValue[pc]);
     pieceCount[pc]--;
+    #if TUNERTRACE
+    Trace.piece_bonus[side][pc >> 1][FLIP_SQUARE(side, sq)]--;
+    Trace.piece_values[side][pc >> 1]--;
+    #endif // TUNERTRACE
 }
 
 void Position::move_piece(int from, int to, PieceCode pc)
