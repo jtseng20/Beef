@@ -18,11 +18,12 @@
 #ifdef __TUNE__
 #include "Beef.h"
 
+/// Choose a tuning method. Turn off both to use simple gradient descent.
 #define RMSProp 1
 #define adam 0
 
-#define tuneMobility 1
-#define tuneWeights 0
+#define tuneMobility 0
+#define tuneWeights 1
 #define tuneImbalance 0
 #define tunePassed 0
 #define tuneKing 0
@@ -34,17 +35,21 @@
 /// RMSProp / adam tuner used for analyzing very large datasets.
 /// Thanks to Andrew Grant for doing the math, and providing an example framework with his own tuner.
 
-constexpr int NTERMS = 629;
-constexpr int EPOCHS = 1;
-constexpr double LR = 2.0;
-constexpr double RMS_E = 0.9;
-constexpr double decayrate = 0.93;
-constexpr int decaySteps = 500;
-constexpr int reportSteps = 100;
-constexpr double adam_b1 = 0.9;
-constexpr double adam_b2 = 0.999;
+/// In my implementation, RMSProp has been historically stronger in high-gradient fields, due to higher momentum
+/// and adam is stronger where the weights are believed to be close to optimal values.
 
-#define NFENS 100000//9999740
+constexpr int NTERMS = 629; // Number of weights to be tuned (I don't change this; coefficients that aren't exposed for tuning are just zeroed)
+constexpr int EPOCHS = 10000; // How many iterations to tune over
+constexpr double LR = 2.0; // Learning rate
+constexpr double RMS_E = 0.9; // Probably don't modify this one
+constexpr double decayrate = 0.93; // The learning rate is scaled down this much each decay step
+constexpr int decaySteps = 500; // How often to lower the learning rate
+constexpr int reportSteps = 100; // How often to print out weights
+constexpr double adam_b1 = 0.9; // Probably don't modify this one
+constexpr double adam_b2 = 0.999; // Probably don't modify this one
+constexpr int cutStep = 600; // In case we want to start with a very high learning rate and drop it suddenly at a certain point
+
+#define NFENS 9999740
 #define NTHREADS 7
 #define BATCHSIZE 16384
 
@@ -1324,9 +1329,9 @@ void reportParams()
         tempParams[i][EG] = round(params[i][EG] + deltas[i][EG]);
     }
 
-    printf("\n\n==============================\n\n");
+    printf("\n\n============================================================\n\n");
     print_params(tempParams);
-    printf("\n\n==============================\n\n");
+    printf("\n\n============================================================\n\n");
 }
 
 void tune()
@@ -1356,8 +1361,7 @@ void tune()
                 RMS[i][EG] = RMS_E * RMS[i][EG] + (1 - RMS_E) * pow((K / 200.0) * gradient[i][EG] / BATCHSIZE, 2.0);
                 deltas[i][MG] += (K / 200.0) * (gradient[i][MG] / BATCHSIZE) * (rate / sqrt(1e-8 + RMS[i][MG]));
                 deltas[i][EG] += (K / 200.0) * (gradient[i][EG] / BATCHSIZE) * (rate / sqrt(1e-8 + RMS[i][EG]));
-                #endif
-                #if adam
+                #elif adam
                 adam_m[i][MG] = adam_b1 * adam_m[i][MG] + (1 - adam_b1) * ((K / 200.0) * gradient[i][MG] / BATCHSIZE);
                 adam_m[i][EG] = adam_b1 * adam_m[i][EG] + (1 - adam_b1) * ((K / 200.0) * gradient[i][EG] / BATCHSIZE);
 
@@ -1371,12 +1375,15 @@ void tune()
 
                 deltas[i][MG] += (K / 200.0) * (gradient[i][MG] / BATCHSIZE) * (rate * mhatMG / (1e-8 + sqrt(vhatMG)));
                 deltas[i][EG] += (K / 200.0) * (gradient[i][EG] / BATCHSIZE) * (rate * mhatEG / (1e-8 + sqrt(vhatEG)));
+                #else
+                deltas[i][MG] += (K / 200.0) * (gradient[i][MG] / BATCHSIZE) * rate;
+                deltas[i][EG] += (K / 200.0) * (gradient[i][EG] / BATCHSIZE) * rate;
                 #endif
             }
         }
 
-        if (epoch > 500 && rate > 1.0)
-            rate = 1.0;
+        if (cutStep && epoch > cutStep && rate > 1.0)
+            rate = max(rate * 0.95, 1.0);
         if (epoch && epoch % decaySteps == 0)
             rate *= decayrate;
         if (epoch && epoch % reportSteps == 0)
@@ -1385,7 +1392,7 @@ void tune()
     //for (int i = 0; i < NTERMS; i++)
         //cout <<deltas[i][MG]<<" "<<deltas[i][EG]<<endl;
 
-    //reportParams();
+    reportParams();
     #endif
 }
 

@@ -1,12 +1,6 @@
 # Beef
 
-Just another chess engine made for fun as a way to learn C++. Beef is strong enough to beat any human player, but has a long way to go in the computer chess scene. Much inspiration from and thanks to the authors of these excellent chess projects:
-
-* Defenchess by Can Cetin and Dogac Eldenk
-* Ethereal by Andrew Grant, Alayan and Laldon
-* Rubichess by Andreas Matthies
-* Slow Chess Blitz Classic by Jonathan Kreuzer
-* Stockfish by Tord Romstad, Marco Costalba, Joona Kiiski and Gary Linscott
+Just another chess engine made for fun as a way to learn C++. Beef is strong enough to beat any human player, but has a long way to go in the computer chess scene. Beef's search routine was initially based on the below listed engines, especially Defenchess; however, so long as this project remains in progress, I am committed to creating my own novelties and diversifying the algorithms.
 
 ## Features
 
@@ -46,3 +40,25 @@ Beef implements many features found in popular modern engines, built around an o
 
 * #### AnalysisMode
   Set to true to stop Beef from immediately returning tablebase moves when analyzing.
+
+
+### Thanks
+
+ Beef would not be possible without the authors of these excellent chess projects:
+
+* Defenchess by Can Cetin and Dogac Eldenk
+    * Provided an understandable structure for search data structures 
+* Ethereal by Andrew Grant, Alayan and Laldon
+    * Provided the inspiration and math to create a gradient tuner plus TB probing via Pyrrhic
+* Rubichess by Andreas Matthies
+* Slow Chess Blitz Classic by Jonathan Kreuzer
+    * Provided details about evaluation and tuning
+* Stockfish by Tord Romstad, Marco Costalba, Joona Kiiski and Gary Linscott
+    * Provided an excellent example of reductions and large page hash allocation
+
+##### Additional resources
+* Python-chess by Niklas Fiekas
+    * Provided an excellent didactic implementation of Bitboards and Polyglot book reading
+* Chessprogamming wiki
+    * An essential resource for all new devs!
+

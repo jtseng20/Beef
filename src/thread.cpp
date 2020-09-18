@@ -18,7 +18,7 @@
 
 #include "Beef.h"
 
-#ifndef __TUNE1__
+#ifndef __OLDTUNE__
 int num_threads = 1;
 #else
 int num_threads = 7;
@@ -42,7 +42,6 @@ void get_ready() {
 
         for (int j = 0; j < MAX_PLY + 2; ++j) {
             searchInfo *info = &t->ss[j];
-            info->pv[0] = MOVE_NONE;
             info->ply = 0;
             info->chosenMove = MOVE_NONE;
             info->excludedMove = MOVE_NONE;
