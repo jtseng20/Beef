@@ -42,7 +42,7 @@ Beef implements many features found in popular modern engines, built around an o
   Set to true to stop Beef from immediately returning tablebase moves when analyzing.
 
 
-### Thanks
+## Thanks
 
  Beef would not be possible without the authors of these excellent chess projects:
 
@@ -56,7 +56,7 @@ Beef implements many features found in popular modern engines, built around an o
 * Stockfish by Tord Romstad, Marco Costalba, Joona Kiiski and Gary Linscott
     * Provided an excellent example of reductions and large page hash allocation
 
-##### Additional resources
+#### Additional resources
 * Python-chess by Niklas Fiekas
     * Provided an excellent didactic implementation of Bitboards and Polyglot book reading
 * Chessprogamming wiki
