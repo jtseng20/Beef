@@ -18,7 +18,7 @@
 
 #include "Beef.h"
 
-#ifndef __TUNE1__
+#ifndef __OLDTUNE__
 int num_threads = 1;
 #else
 int num_threads = 7;

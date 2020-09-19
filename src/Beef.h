@@ -1102,7 +1102,7 @@ const int futility_move_counts[2][9] = {
     {0, 5, 7, 10, 16, 24, 33, 44, 58}, // improving
 };
 
-constexpr int ASPIRATION_INIT = 10;
+constexpr int ASPIRATION_INIT = 15;
 constexpr int futility_history_limit[2] = { 16000, 9000 };
 constexpr int RazoringMarginByDepth[3] = {0, 180, 350};
 constexpr int ProbCutMargin = 80;

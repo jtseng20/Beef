@@ -15,7 +15,10 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifdef __TUNE1__
+
+/// This tuner, which uses traditional, slow, local search is now out of date, having been replaced with a gradient-based tuner.
+
+#ifdef __OLDTUNE__
 #include "Beef.h"
 #define __quiet__ // using zurichess quiet; else lichess-quiet
 
