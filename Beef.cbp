@@ -46,12 +46,19 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-Og" />
-					<Add option="-g" />
+					<Add option="-fomit-frame-pointer" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-flto" />
+					<Add option="-O3" />
 					<Add option="-fopenmp" />
 					<Add option="-D__TUNE__" />
 					<Add option="-DNDEBUG" />
 				</Compiler>
+				<Linker>
+					<Add option="-flto" />
+					<Add option="-s" />
+					<Add option="-fopenmp" />
+				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
@@ -64,10 +71,6 @@
 		<Unit filename="src/Beef.h" />
 		<Unit filename="src/board.cpp" />
 		<Unit filename="src/eval.cpp" />
-		<Unit filename="src/evaltune.cpp">
-			<Option compile="0" />
-			<Option link="0" />
-		</Unit>
 		<Unit filename="src/magic.cpp" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/movegen.cpp" />
@@ -82,7 +85,11 @@
 		<Unit filename="src/pyrrhic/tbconfig.h" />
 		<Unit filename="src/pyrrhic/tbprobe.cpp" />
 		<Unit filename="src/pyrrhic/tbprobe.h" />
-		<Unit filename="src/search.cpp" />
+		<Unit filename="src/search.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="src/simpleSearch.cpp" />
 		<Unit filename="src/syzygy.cpp" />
 		<Unit filename="src/thread.cpp" />
 		<Unit filename="src/time.cpp" />

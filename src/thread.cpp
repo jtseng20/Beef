@@ -43,6 +43,7 @@ void get_ready() {
         for (int j = 0; j < MAX_PLY + 2; ++j) {
             searchInfo *info = &t->ss[j];
             info->pv[0] = MOVE_NONE;
+            info->pvLen = 0;
             info->ply = 0;
             info->chosenMove = MOVE_NONE;
             info->excludedMove = MOVE_NONE;

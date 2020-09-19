@@ -796,7 +796,7 @@ struct materialhashEntry
     U64 key;
     Score score;
     int phase;
-    int endgame_type;
+    bool isDrawn;
     bool hasSpecialEndgame;
     int (*evaluation)(const Position&);
 };
@@ -851,7 +851,8 @@ typedef array<array<int16_t, 64>, 14> pieceToHistory; // std::arrays don't need 
 struct searchInfo
 {
     Move pv[MAX_PLY + 1];
-    int ply; ///This counts UP as the search progresses
+    uint8_t pvLen;
+    int8_t ply; ///This counts UP as the search progresses
     Move chosenMove;
     Move excludedMove;
     int staticEval;
@@ -866,8 +867,8 @@ struct SearchThread
     int16_t historyTable[2][64][64];
     Move counterMoveTable[14][64];
     pieceToHistory counterMove_history[14][64];
-    int thread_id;
-    int seldepth;
+    uint16_t thread_id;
+    int16_t seldepth;
     U64 nodes;
     U64 tb_hits;
     int rootheight; ///this is how many ply from 0 the current root is
@@ -1087,8 +1088,6 @@ struct Parameter
 //imbalance weights
 extern const int my_pieces[5][5];
 extern const int opponent_pieces[5][5];
-
-enum endgameType { NORMAL_ENDGAME, DRAW_ENDGAME };
 
 inline materialhashEntry* get_materialEntry(const Position& p) { return &p.my_thread->materialTable[p.materialhash & MATERIAL_HASH_SIZE_MASK]; }
 
