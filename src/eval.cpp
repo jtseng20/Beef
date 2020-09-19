@@ -782,16 +782,16 @@ materialhashEntry* probeMaterial(const Position& pos)
     int all_major = white_major + black_major;
     bool no_pawns = pos.pieceCount[WPAWN] == 0 && pos.pieceCount[BPAWN] == 0;
 
-    material->endgame_type = NORMAL_ENDGAME;
+    material->isDrawn = false;
 
     if (no_pawns && all_minor + all_major == 0) {
-        material->endgame_type = DRAW_ENDGAME;
+        material->isDrawn = true;
     }
     else if (no_pawns && all_major == 0 && white_minor < 2 && black_minor < 2) {
-        material->endgame_type = DRAW_ENDGAME;
+        material->isDrawn = true;
     }
     else if (no_pawns && all_major == 0 && all_minor == 2 && (pos.pieceCount[WKNIGHT] == 2 || pos.pieceCount[BKNIGHT] == 2)) {
-        material->endgame_type = DRAW_ENDGAME;
+        material->isDrawn = true;
     }
 
     material->hasSpecialEndgame = false;
@@ -816,7 +816,7 @@ template <Tracing T> int Eval<T>::value()
         return material->evaluation(pos);
     }
 
-    if (material->endgame_type == DRAW_ENDGAME)
+    if (material->isDrawn)
     {
         return 1 - (pos.my_thread->nodes & 2);
     }

@@ -22,6 +22,8 @@
 #include <sys/mman.h>
 #endif
 
+extern timeInfo globalLimits;
+
 void* aligned_ttmem_alloc(size_t allocSize, void*& mem) {
     #if defined(__linux__) && !defined(__ANDROID__)
     cout << "Using large pages" << endl;
@@ -152,4 +154,35 @@ const string move_to_str(Move code)
 
     sprintf(s, "%c%d%c%d%c", (from & 0x7) + 'a', ((from >> 3) & 0x7) + 1, (to & 0x7) + 'a', ((to >> 3) & 0x7) + 1, promChar);
     return s;
+}
+
+void bench()
+{
+    uint64_t nodes = 0;
+    int benchStart = getRealTime();
+    is_timeout = false;
+    globalLimits.movesToGo = 0;
+    globalLimits.totalTimeLeft = 0;
+    globalLimits.increment = 0;
+    globalLimits.movetime = 0;
+    globalLimits.depthlimit = 13;
+    globalLimits.timelimited = false;
+    globalLimits.depthlimited = true;
+    globalLimits.infinite = false;
+
+    for (int i = 0; i < 36; i++){
+        cout << "\nPosition [" << (i + 1) << "|36]\n" << endl;
+        Position *p = import_fen(benchmarks[i].c_str(), 0);
+        think(p);
+        nodes += main_thread.nodes;
+
+        clear_tt();
+    }
+
+    int time_taken = getRealTime() - benchStart;
+
+    cout << "\n------------------------\n";
+    cout << "Time  : " << time_taken << endl;
+    cout << "Nodes : " << nodes << endl;
+    cout << "NPS   : " << nodes * 1000 / (time_taken + 1) << endl;
 }

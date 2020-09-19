@@ -71,10 +71,6 @@
 		<Unit filename="src/Beef.h" />
 		<Unit filename="src/board.cpp" />
 		<Unit filename="src/eval.cpp" />
-		<Unit filename="src/evaltune.cpp">
-			<Option compile="0" />
-			<Option link="0" />
-		</Unit>
 		<Unit filename="src/magic.cpp" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/movegen.cpp" />
