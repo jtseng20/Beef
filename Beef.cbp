@@ -85,11 +85,7 @@
 		<Unit filename="src/pyrrhic/tbconfig.h" />
 		<Unit filename="src/pyrrhic/tbprobe.cpp" />
 		<Unit filename="src/pyrrhic/tbprobe.h" />
-		<Unit filename="src/search.cpp">
-			<Option compile="0" />
-			<Option link="0" />
-		</Unit>
-		<Unit filename="src/simpleSearch.cpp" />
+		<Unit filename="src/search.cpp" />
 		<Unit filename="src/syzygy.cpp" />
 		<Unit filename="src/thread.cpp" />
 		<Unit filename="src/time.cpp" />
