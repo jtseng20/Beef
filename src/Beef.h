@@ -1129,10 +1129,7 @@ think_depth_limit;
 
 extern bool is_movetime;
 
-extern volatile bool is_timeout,
-quit_application,
-is_searching,
-is_pondering;
+extern volatile bool is_timeout, is_pondering;
 
 int getRealTime();
 

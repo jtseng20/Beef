@@ -20,11 +20,12 @@
 #include "pyrrhic/tbprobe.h"
 
 vector<string> args;
-Position *root_position;
+Position *root_position = &main_thread.position;
 extern unsigned TB_PROBE_DEPTH;
 extern volatile bool ANALYSISMODE;
 extern volatile bool is_pondering;
 extern timeInfo globalLimits;
+Position globalPosition;
 
 bool word_equal(int index, string comparison_str) {
     if (args.size() > (unsigned) index)
@@ -74,7 +75,8 @@ Move uci2Move(Position *pos, string s)
 
 void startpos()
 {
-    root_position = start_position();
+    //root_position = start_position();
+    globalPosition.readFEN(STARTFEN);
 
     if (word_equal(2, "moves"))
     {
@@ -82,17 +84,17 @@ void startpos()
             Move m = MOVE_NONE;
             if (args[i].length() == 4 || args[i].length() == 5)
             {
-                m = uci2Move(root_position, args[i]);
+                m = uci2Move(&globalPosition, args[i]);
                 if (args[i].length() == 5)
                 {
                     PieceType promote = GetPieceType(args[i][4]);
                     m = Move(m | ((promote - KNIGHT) << 12));
                 }
             }
-            if (m != MOVE_NONE && root_position->isPseudoLegal(m)) {
-                root_position->do_move(m);
-                if (root_position->halfmoveClock == 0)
-                    root_position->historyIndex = 0;
+            if (m != MOVE_NONE && globalPosition.isPseudoLegal(m)) {
+                globalPosition.do_move(m);
+                if (globalPosition.halfmoveClock == 0)
+                    globalPosition.historyIndex = 0;
             }
         }
     }
@@ -101,7 +103,8 @@ void startpos()
 void cmd_fen()
 {
     string fen = args[2] + " " + args[3] + " " + args[4] + " " + args[5] + " " + args[6] + " " + args[7];
-    root_position = import_fen(fen.c_str(), 0);
+    //root_position = import_fen(fen.c_str(), 0);
+    globalPosition.readFEN(fen.c_str());
 
     if (word_equal(8, "moves"))
     {
@@ -109,20 +112,27 @@ void cmd_fen()
             Move m = MOVE_NONE;
             if (args[i].length() == 4 || args[i].length() == 5)
             {
-                m = uci2Move(root_position, args[i]);
+                m = uci2Move(&globalPosition, args[i]);
                 if (args[i].length() == 5)
                 {
                     PieceType promote = GetPieceType(args[i][4]);
                     m = Move(m | ((promote - KNIGHT) << 12));
                 }
             }
-            if (m != MOVE_NONE && root_position->isPseudoLegal(m)) {
-                root_position->do_move(m);
-            if (root_position->halfmoveClock == 0)
-                root_position->historyIndex = 0;
+            if (m != MOVE_NONE && globalPosition.isPseudoLegal(m)) {
+                globalPosition.do_move(m);
+            if (globalPosition.halfmoveClock == 0)
+                globalPosition.historyIndex = 0;
             }
         }
     }
+}
+
+void prepareThreads()
+{
+    memcpy(&main_thread.position, &globalPosition, sizeof(Position));
+    main_thread.position.my_thread = &main_thread;
+    get_ready();
 }
 
 void ucinewgame()
@@ -155,6 +165,7 @@ U64 Perft(Position& pos, int depth) {
 
 void perft()
 {
+    prepareThreads();
     U64 nodes = Perft <true> (*root_position, stoi(args[1]));
     cout << "Nodes searched: "<<nodes<<endl;
 }
@@ -164,7 +175,6 @@ void cmd_position() {
         cmd_fen();
     if (args[1] == "startpos")
         startpos();
-    get_ready();
 }
 
 void option(string name, string value) {
@@ -240,6 +250,7 @@ void setoption_fast()
 
 void debug()
 {
+    prepareThreads();
     cout << *root_position << endl;
     searchInfo *info = &main_thread.ss[2];
     MoveGen movegen = MoveGen(root_position, NORMAL_SEARCH, MOVE_NONE, 0, 0);
@@ -268,16 +279,6 @@ void uci() {
     cout << "uciok" << endl;
 }
 
-void quit() {
-    if (!is_searching) {
-        exit(EXIT_SUCCESS);
-    }
-
-    is_timeout = true;
-    is_pondering = false;
-    quit_application = true;
-}
-
 void stop() {
     is_timeout = true;
     is_pondering = false;
@@ -288,7 +289,7 @@ void isready() {
 }
 
 void go() {
-
+    prepareThreads();
     int depth = 0;
     bool infinite = false, timelimited = false, depthlimited = false;
     int wtime = 0, btime = 0, movetime = 0;
@@ -370,6 +371,7 @@ void go() {
 }
 
 void eval() {
+    prepareThreads();
     cout << trace(*root_position) << endl;
 }
 
@@ -378,6 +380,7 @@ void ponderhit() {
 }
 
 void see() {
+    prepareThreads();
     Move m = uci2Move(root_position, args[1]);
     cout << root_position->see(m, 0) << endl;
 }
@@ -402,8 +405,8 @@ void run(string s)
         perft();
     if (s == "debug")
         debug();
-    if (s == "quit" || s == "exit")
-        quit();
+    if (s == "quit")
+        exit(0);
     if (s == "stop")
         stop();
     if (s == "see")
@@ -424,7 +427,8 @@ void loop()
 #endif
     string input;
 
-    root_position = start_position();
+    globalPosition.readFEN(STARTFEN);
+    prepareThreads();
 
     while (true)
     {

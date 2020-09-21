@@ -26,7 +26,6 @@ static const int SkipSize[16] = { 1, 1, 1, 2, 2, 2, 1, 3, 2, 2, 1, 3, 3, 2, 2, 1
 static const int SkipDepths[16] = { 1, 2, 2, 4, 4, 3, 2, 5, 4, 3, 2, 6, 5, 4, 3, 2 };
 
 int startTime = 0;
-Move LastPV = MOVE_NONE;
 int globalState = 0;
 
 int ideal_usage = 10000,
@@ -40,8 +39,6 @@ bool is_depth = false;
 bool is_infinite = false;
 
 volatile bool is_timeout = false,
-              quit_application = false,
-              is_searching = false,
               is_pondering = false;
 
 timeInfo globalLimits = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -995,8 +992,6 @@ void* think (void *p)
     //pthread_t threads[MAX_THREADS];
     initialize_nodes();
 
-    is_searching = true;
-
     for (int i = 0; i < num_threads; i++)
     {
         threads[i] = thread(aspiration_thread, get_thread(i));
@@ -1014,11 +1009,10 @@ void* think (void *p)
     while (is_pondering) {}
 
     #if STACKTRACE
-    if (LastPV && LastPV == main_pv[0])
+    if (pvLength == 0)
     {
         cout << "DISASTER at global state " << globalState << endl;
     }
-    LastPV = main_pv[0];
     #endif
 
     ponderMove = pvLength > 1 ? main_pv[1] : MOVE_NONE;
@@ -1033,9 +1027,5 @@ void* think (void *p)
 
     cout<<endl;
     fflush(stdout);
-    if (quit_application)
-        exit(EXIT_SUCCESS);
-
-    is_searching = false;
     return NULL;
 }
