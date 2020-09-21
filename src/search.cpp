@@ -18,6 +18,7 @@
 
 #include "Beef.h"
 #include "pyrrhic/tbprobe.h"
+#define STACKTRACE 0
 
 
 // A shameless copy of Laser's parameters; it remains to be seen if these are any good
@@ -25,6 +26,8 @@ static const int SkipSize[16] = { 1, 1, 1, 2, 2, 2, 1, 3, 2, 2, 1, 3, 3, 2, 2, 1
 static const int SkipDepths[16] = { 1, 2, 2, 4, 4, 3, 2, 5, 4, 3, 2, 6, 5, 4, 3, 2 };
 
 int startTime = 0;
+Move LastPV = MOVE_NONE;
+int globalState = 0;
 
 int ideal_usage = 10000,
     max_usage = 10000,
@@ -229,9 +232,10 @@ int qSearchDelta(const Position *pos)
 }
 
 void check_time(SearchThread *thread) {
-
-    if ((thread->nodes & TIMER_GRANULARITY) == TIMER_GRANULARITY) {
-        if (time_passed() >= max_usage && !is_pondering && !is_depth && !is_infinite) {
+    if ((thread->nodes & TIMER_GRANULARITY) == TIMER_GRANULARITY)
+    {
+        if (time_passed() >= max_usage && !is_pondering && !is_depth && !is_infinite)
+        {
             is_timeout = true;
         }
     }
@@ -239,6 +243,7 @@ void check_time(SearchThread *thread) {
 
 int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const int beta)
 {
+    if (STACKTRACE) globalState = 0;
     Position *pos = &thread->position;
     thread->nodes++;
 
@@ -247,6 +252,15 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
 
     if (is_pv)
         info->pvLen = 0;
+
+    if (thread->thread_id == 0)
+        check_time(thread);
+    ///TIME CONTROL
+    if (is_timeout)
+    {
+        longjmp(thread->jbuffer, 1);
+        //return TIMEOUT;
+    }
 
     if (isDraw(pos))
         return 1 - (thread->nodes & 2);
@@ -266,6 +280,8 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
     info->chosenMove = MOVE_NONE;
     (info+1)->ply = ply + 1;
 
+    if (STACKTRACE) globalState = 1;
+
     if (ttHit)
     {
         hashMove = Move(tte->movecode);
@@ -279,6 +295,8 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
              }
     }
     int bestScore;
+
+    if (STACKTRACE) globalState = 2;
 
     if (!in_check) // stand pat
     {
@@ -309,6 +327,8 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
         info->staticEval = UNDEFINED;
     }
 
+    if (STACKTRACE) globalState = 3;
+
     MoveGen movegen = MoveGen(pos, QUIESCENCE_SEARCH, hashMove, 0, depth);
     Move bestMove = MOVE_NONE;
     int moveCount = 0;
@@ -327,6 +347,8 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
         historyScores(pos, info, m, &history, &counter, &followup);
 
         bool isTactical = (pos->isTactical(m));
+
+        if (STACKTRACE) globalState = 4;
 
         if (moveCount > 1 && !isTactical && counter < 0 && followup < 0)
             continue;
@@ -347,6 +369,7 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
             {
                 if (is_pv && is_main_thread(pos))
                 {
+                    if (STACKTRACE) globalState = 5;
                     //updatePV(m, info);
                     info->pv[0] = m;
                     info->pvLen = (info+1)->pvLen + 1;
@@ -367,6 +390,8 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
         }
     }
 
+    if (STACKTRACE) globalState = 6;
+
     if (moveCount == 0 && in_check)
         return VALUE_MATED + ply;
     uint8_t return_flag = (is_pv && bestMove) ? FLAG_EXACT : FLAG_ALPHA;
@@ -377,6 +402,7 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
 
 int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int beta)
 {
+    if (STACKTRACE) globalState = 7;
     if (depth < 1)
     {
         return qSearch(thread, info, 0, alpha, beta);
@@ -402,7 +428,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
         ///TIME CONTROL
         if (is_timeout)
         {
-            return TIMEOUT;
+            longjmp(thread->jbuffer, 1);
+            //return TIMEOUT;
         }
 
         if (ply >= MAX_PLY)
@@ -422,6 +449,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
             return alpha;
         }
     }
+
+    if (STACKTRACE) globalState = 8;
 
     if (is_pv && ply > thread->seldepth)
         thread->seldepth = ply;
@@ -472,6 +501,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
         }
     }
 
+    if (STACKTRACE) globalState = 9;
+
     ///TB Probe
     unsigned TBResult = tablebasesProbeWDL(pos, depth, ply);
     if (TBResult != TB_RESULT_FAILED) {
@@ -497,6 +528,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
     bool is_null = (info-1)->chosenMove == MOVE_NULL;
 
+    if (STACKTRACE) globalState = 10;
+
     if (!in_check)
     {
         if (ttHit && tte->static_eval != UNDEFINED)
@@ -521,6 +554,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
     }
 // TODO (drstrange767#1#): tune razoring + futility margins / depths + add multiple razor levels
 
+    if (STACKTRACE) globalState = 11;
+
     ///Razoring
     if (!in_check && !is_pv && depth < 3 && info->staticEval <= alpha - RazoringMarginByDepth[depth])
     {
@@ -529,11 +564,15 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
     bool improving = !in_check && ply > 1 && (info->staticEval >= (info-2)->staticEval || (info-2)->staticEval == UNDEFINED);
 
+    if (STACKTRACE) globalState = 12;
+
     ///Reverse Futility Pruning
     if (!in_check && !is_pv && depth < 9 && info->staticEval - 80 * depth >= (beta - improvementValue*improving) && pos->nonPawn[pos->activeSide])
     {
         return info->staticEval;
     }
+
+    if (STACKTRACE) globalState = 13;
 
     ///Null Move
     if ( !in_check && !is_pv && thread->doNMP && !is_null &&
@@ -570,6 +609,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
             }
         }
     }
+
+    if (STACKTRACE) globalState = 14;
 
     ///Probcut
     ///////////////////////////////////////////////////SECTION UNDER REVIEW//////////////////////////////////////////////////////////
@@ -612,6 +653,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
     bool skipQuiets = false;
 
+    if (STACKTRACE) globalState = 15;
+
     while((m = movegen.next_move(info, skipQuiets)) != MOVE_NONE)
     {
         if (m == excluded_move)
@@ -650,6 +693,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
             else if (movegen.state > TACTICAL_STATE && !pos->see(m, -PAWN_EG * depth)) // is a bad tactical move with very low SEE
                 continue;
         }
+
+        if (STACKTRACE) globalState = 16;
 
         ///Singular extension search
         if (depth >= singularDepth && m == hashMove && !isRoot && excluded_move == MOVE_NONE
@@ -698,12 +743,14 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
         ///////////////////////////////////////////////////SECTION UNDER REVIEW//////////////////////////////////////////////////////////
 
+        if (STACKTRACE) globalState = 17;
         if (is_pv && num_moves == 1)
         {
             score = -alphaBeta(thread, info+1, newDepth, -beta, -alpha);
         }
         else
         {
+            if (STACKTRACE) globalState = 18;
             int reduction = 0;
             if (depth >= 3 && num_moves > 1 + isRoot && (!isTactical || pieceValues[EG][pos->capturedPiece] + info->staticEval <= alpha))
             {
@@ -745,6 +792,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
             {
                 if (is_pv && is_main_thread(pos))
                 {
+                    if (STACKTRACE) globalState = 19;
                     //updatePV(m, info);
                     info->pv[0] = m;
                     info->pvLen = (info+1)->pvLen + 1;
@@ -767,6 +815,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
             quiets[quiets_count++] = m;
         }
     }
+
+    if (STACKTRACE) globalState = 20;
 
     if (num_moves == 0)
     {
@@ -791,12 +841,11 @@ void printInfo(Position *pos, searchInfo *info, int depth, int score, int alpha,
     bool printPV = score > alpha && score < beta;
     U64 tb_hits = sum_tb_hits();
     U64 nodes = sum_nodes();
-    const char *bound = score >= beta ? "lowerbound" : score <= alpha ? "upperbound" : "";
-    const char *scoreType = abs(score) >= VALUE_MATE ? "mate" : "cp";
+    const char *bound = score >= beta ? " lowerbound" : score <= alpha ? " upperbound" : "";
+    const char *scoreType = abs(score) >= MATE_IN_MAX_PLY ? "mate" : "cp";
     score = score <= MATED_IN_MAX_PLY ? ((VALUE_MATED - score) / 2) : score >= MATE_IN_MAX_PLY ? ((VALUE_MATE - score + 1) / 2) : score * 100 / PAWN_EG;
 
-    printf("info depth %d seldepth %d multipv 1 score %s %d%s time %d "
-           "nodes %zu nps %zu tbhits %zu hashfull %d pv ",
+    printf("info depth %d seldepth %d multipv 1 score %s %d%s time %d nodes %zu nps %zu tbhits %zu hashfull %d pv ",
            depth, pos->my_thread->seldepth+1, scoreType, score, bound, time_taken, nodes, nodes*1000/(time_taken+1), tb_hits, hashfull());
 
     if (printPV) {
@@ -845,6 +894,7 @@ void *aspiration_thread(void *t)
             if ((depth + cycle) % SkipDepths[cycle] == 0)
                 depth += SkipSize[cycle];
         }
+        if (setjmp(thread->jbuffer)) break;
 
         while (true)
         {
@@ -857,7 +907,6 @@ void *aspiration_thread(void *t)
 
             if (is_main && (score <= alpha || score >= beta) && depth > 12)
             {
-                ///PRINT INFO
                 printInfo(pos, info, depth, score, alpha, beta);
             }
 
@@ -877,6 +926,7 @@ void *aspiration_thread(void *t)
                 {
                     pvLength = info->pvLen;
                     memcpy(main_pv, info->pv, sizeof(Move)*pvLength);
+                    printInfo(pos, info, depth, score, alpha, beta);
                 }
                 break;
             }
@@ -896,23 +946,18 @@ void *aspiration_thread(void *t)
             continue;
         }
 
-        ///PRINT INFO
-        printInfo(pos, info, depth, score, alpha, beta);
-
         if (time_passed() > ideal_usage && !is_pondering && !is_depth && !is_infinite)
         {
             is_timeout = true;
             break;
         }
 
-        lastPV = bestMove;
-        bestMove = main_pv[0];
-        ponderMove = pvLength > 1 ? main_pv[1] : MOVE_NONE;
-
         if ( depth >= 6 && !is_movetime)
         {
-            updateTime(failed_low, lastPV == bestMove, init_ideal_usage);
+            updateTime(failed_low, lastPV == main_pv[0], init_ideal_usage);
         }
+
+        lastPV = main_pv[0];
     }
     return NULL;
 }
@@ -922,8 +967,11 @@ void* think (void *p)
     Position *pos = (Position*)p;
     getMyTimeLimit();
     start_search();
+    cout <<"ideal time "<<ideal_usage<<" max time "<<max_usage<<endl;
 
     startTime = getRealTime();
+    pvLength = 0;
+    if (STACKTRACE) globalState = -1;
 
     /// Probe book and TB
     Move probeMove = book.probe(*pos);
@@ -965,10 +1013,21 @@ void* think (void *p)
 
     while (is_pondering) {}
 
+    #if STACKTRACE
+    if (LastPV && LastPV == main_pv[0])
+    {
+        cout << "DISASTER at global state " << globalState << endl;
+    }
+    LastPV = main_pv[0];
+    #endif
+
+    ponderMove = pvLength > 1 ? main_pv[1] : MOVE_NONE;
+
     cout << "info time " << time_passed() << endl;
     cout << "bestmove " << move_to_str(main_pv[0]);
 
-    if (main_pv[0] == bestMove && (to_sq(ponderMove) != from_sq(ponderMove))) {
+    if ((to_sq(ponderMove) != from_sq(ponderMove)))
+    {
         cout << " ponder " << move_to_str(ponderMove);
     }
 

@@ -53,6 +53,7 @@
 #include <regex>
 #include <stdlib.h>
 #include <assert.h>
+#include <setjmp.h>
 
 
 #define NAME "Beef"
@@ -875,6 +876,7 @@ struct SearchThread
     pawnhashEntry pawntable[PAWN_ENTRIES];
     materialhashEntry materialTable[MATERIAL_ENTRIES];
     bool doNMP;
+    jmp_buf jbuffer;
 };
 
 inline pawnhashEntry* get_pawntte(const Position& pos)

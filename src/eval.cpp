@@ -190,6 +190,11 @@ template <Tracing T> template <Color side> void Eval<T>::evaluate_pawn_structure
         phalanx = phalanxMasks[sq] & myPawns;
         supported = PAWN_ATTACKS[them][sq] & myPawns;
 
+        #if TUNERTRACE
+        Trace.piece_bonus[side][PAWN][FLIP_SQUARE(side, sq)]++;
+        Trace.piece_values[side][PAWN]++;
+        #endif // TUNERTRACE
+
         if (isolated)
         {
             pawnStructure -= (BITSET(sq) & FileAH) ? isolated_penaltyAH[opposed] : isolated_penalty[opposed];
@@ -454,6 +459,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
     out -= kingflankAttack * (POPCOUNT(flankAttacks) + POPCOUNT(double_flank_attacks));
     #if TUNERTRACE
     Trace.kingflankAttack[side] -= (POPCOUNT(flankAttacks) + POPCOUNT(double_flank_attacks));
+    Trace.piece_bonus[side][KING][FLIP_SQUARE(side, kingSquare)]++;
     #endif // TUNERTRACE
 
     if (T)
@@ -547,6 +553,8 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
                 mobility[side] += bishopMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
                 #if TUNERTRACE
                 Trace.bishopMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+                Trace.piece_bonus[side][BISHOP][FLIP_SQUARE(side, sq)]++;
+                Trace.piece_values[side][BISHOP]++;
                 #endif // TUNERTRACE
             }
             else // KNIGHT
@@ -554,6 +562,8 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
                 mobility[side] += knightMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
                 #if TUNERTRACE
                 Trace.knightMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+                Trace.piece_bonus[side][KNIGHT][FLIP_SQUARE(side, sq)]++;
+                Trace.piece_values[side][KNIGHT]++;
                 #endif // TUNERTRACE
             }
 
@@ -608,6 +618,8 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             mobility[side] += rookMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
             #if TUNERTRACE
             Trace.rookMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+            Trace.piece_bonus[side][ROOK][FLIP_SQUARE(side, sq)]++;
+            Trace.piece_values[side][ROOK]++;
             #endif // TUNERTRACE
         }
 
@@ -616,6 +628,8 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             mobility[side] += queenMobilityBonus[POPCOUNT(attacks & (mobility_area[side]))];
             #if TUNERTRACE
             Trace.queenMobilityBonus[side][POPCOUNT(attacks & (mobility_area[side]))]++;
+            Trace.piece_bonus[side][QUEEN][FLIP_SQUARE(side, sq)]++;
+            Trace.piece_values[side][QUEEN]++;
             #endif // TUNERTRACE
         }
     }

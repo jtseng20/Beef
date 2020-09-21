@@ -22,8 +22,8 @@
 #define RMSProp 1
 #define adam 0
 
-#define tuneMobility 0
-#define tuneWeights 1
+#define tuneMobility 1
+#define tuneWeights 0
 #define tuneImbalance 0
 #define tunePassed 0
 #define tuneKing 0
