@@ -152,6 +152,7 @@ void save_killer(Position *pos, searchInfo *info, Move m, int16_t bonus)
 /// When a quiet move gets a beta cutoff, its histories are boosted
 void update_heuristics(Position *pos, searchInfo *info, int bestScore, int beta, int depth, Move m, Move *quiets, int quiets_count)
 {
+// TODO (drstrange767#1#): try bigBonus value = depth == 15 ? bonus : historyBonus(depth + 1)
     int16_t bigBonus = historyBonus(depth + 1);
     int16_t bonus = bestScore > beta + PAWN_MG ? bigBonus : historyBonus(depth);
 
@@ -652,6 +653,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
 
     if (STACKTRACE) globalState = 15;
 
+    info->hadSingularExtension = false;
+
     while((m = movegen.next_move(info, skipQuiets)) != MOVE_NONE)
     {
         if (m == excluded_move)
@@ -706,6 +709,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
             if (singularValue < singularBeta)
             {
                 extension = 1;
+                info->hadSingularExtension = true;
             }
 
             else if (singularBeta >= beta)
@@ -719,6 +723,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
         else
         {
             if (givesCheck && (pos->see(m, 0)))
+                extension = 1;
+            else if (depth < 3 && pos->advanced_pawn_push(m))
                 extension = 1;
         }
 // TODO (drstrange767#1#): if (gameCycle && depth < 5 || is_pv) extend ??
@@ -760,7 +766,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                     if (m == info->killers[0] || m == info->killers[1] || m == movegen.counterMove)
                         reduction --;
                     if (hashMove && pos->isCapture(hashMove))
-                        reduction ++;
+                        reduction += 1 + info->hadSingularExtension;
                 }
 
                 int quietScore = history + counter + followup;

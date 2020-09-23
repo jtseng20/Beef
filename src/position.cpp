@@ -583,9 +583,8 @@ bool Position::pawnOn7th() const
 
 bool Position::advanced_pawn_push(Move m) const
 {
-    PieceCode pc = mailbox[from_sq(m)];
     int to = to_sq(m);
-    return (pc <= BPAWN &&
+    return (mailbox[from_sq(m)] <= BPAWN &&
             (RRANK(to, activeSide) == 6 ||
              (RRANK(to, activeSide) == 5 && mailbox[PAWNPUSHINDEX(activeSide, to)] == BLANK)
              )

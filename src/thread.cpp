@@ -45,6 +45,7 @@ void get_ready() {
             info->pv[0] = MOVE_NONE;
             info->pvLen = 0;
             info->ply = 0;
+            info->hadSingularExtension = false;
             info->chosenMove = MOVE_NONE;
             info->excludedMove = MOVE_NONE;
             info->staticEval = UNDEFINED;

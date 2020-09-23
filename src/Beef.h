@@ -857,6 +857,7 @@ struct searchInfo
     Move chosenMove;
     Move excludedMove;
     int staticEval;
+    bool hadSingularExtension;
     Move killers[2];
     pieceToHistory *counterMove_history;
 };
