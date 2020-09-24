@@ -57,7 +57,7 @@
 
 
 #define NAME "Beef"
-#define VERSION "0.2.2"
+#define VERSION "0.3.6"
 #define AUTHOR "Jonathan Tseng"
 
 #if defined(_WIN32) || defined(_WIN64)
