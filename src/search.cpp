@@ -257,7 +257,6 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
     if (is_timeout)
     {
         longjmp(thread->jbuffer, 1);
-        //return TIMEOUT;
     }
 
     if (isDraw(pos))
@@ -368,7 +367,6 @@ int qSearch(SearchThread *thread, searchInfo *info, int depth, int alpha, const 
                 if (is_pv && is_main_thread(pos))
                 {
                     if (STACKTRACE) globalState = 5;
-                    //updatePV(m, info);
                     info->pv[0] = m;
                     info->pvLen = (info+1)->pvLen + 1;
                     memcpy(info->pv + 1, (info + 1)->pv, sizeof(Move)*(info+1)->pvLen);
@@ -410,7 +408,6 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
     bool is_pv = beta - alpha > 1;
     if (is_pv)
     {
-        //info->pv[0] = MOVE_NONE;
         info->pvLen = 0;
     }
 
@@ -427,7 +424,6 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
         if (is_timeout)
         {
             longjmp(thread->jbuffer, 1);
-            //return TIMEOUT;
         }
 
         if (ply >= MAX_PLY)
@@ -796,7 +792,6 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                 if (is_pv && is_main_thread(pos))
                 {
                     if (STACKTRACE) globalState = 19;
-                    //updatePV(m, info);
                     info->pv[0] = m;
                     info->pvLen = (info+1)->pvLen + 1;
                     memcpy(info->pv + 1, (info + 1)->pv, sizeof(Move)*(info+1)->pvLen);
@@ -970,7 +965,6 @@ void* think (void *p)
     Position *pos = (Position*)p;
     getMyTimeLimit();
     start_search();
-    cout <<"ideal time "<<ideal_usage<<" max time "<<max_usage<<endl;
 
     startTime = getRealTime();
     pvLength = 0;
@@ -995,19 +989,16 @@ void* think (void *p)
     }
 
     thread *threads = new thread[num_threads];
-    //pthread_t threads[MAX_THREADS];
     initialize_nodes();
 
     for (int i = 0; i < num_threads; i++)
     {
         threads[i] = thread(aspiration_thread, get_thread(i));
-        //pthread_create(&threads[i], NULL, &aspiration_thread, get_thread(i));
     }
 
     for (int i = 0; i < num_threads; i++)
     {
         threads[i].join();
-        //pthread_join(threads[i], NULL);
     }
 
     delete[] threads;

@@ -398,6 +398,7 @@ void Position::do_move(Move m)
     }
 
     PREFETCH(&my_thread->pawntable[pawnhash & PAWN_HASH_SIZE_MASK]);
+    PREFETCH(&my_thread->materialTable[materialhash & MATERIAL_HASH_SIZE_MASK]);
 
     activeSide = ~activeSide;
     if (!activeSide)
