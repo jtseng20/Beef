@@ -45,7 +45,7 @@ timeInfo globalLimits = {0, 0, 0, 0, 0, 0, 0, 0};
 volatile bool ANALYSISMODE = false;
 Move main_pv[MAX_PLY + 1];
 int pvLength = 0;
-Move bestMove, ponderMove;
+Move ponderMove;
 
 inline void getMyTimeLimit()
 {
