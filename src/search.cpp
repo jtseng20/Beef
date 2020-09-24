@@ -868,6 +868,7 @@ void *aspiration_thread(void *t)
     int score = VALUE_MATED;
     int init_ideal_usage = ideal_usage;
     int depth = 0;
+    int actualSearchDepth = 0;
 
     while (++depth <= think_depth_limit)
     {
@@ -875,8 +876,9 @@ void *aspiration_thread(void *t)
         int aspiration = ASPIRATION_INIT;
         int alpha = VALUE_MATED;
         int beta = VALUE_MATE;
+        actualSearchDepth = depth;
 
-        if (depth >= 5)
+        if (actualSearchDepth >= 5)
         {
             alpha = max(previous - aspiration, int(VALUE_MATED));
             beta = min(previous + aspiration, int(VALUE_MATE));
@@ -889,23 +891,23 @@ void *aspiration_thread(void *t)
         if ( thread->thread_id != 0 )
         {
             int cycle = thread->thread_id % 16;
-            if ((depth + cycle) % SkipDepths[cycle] == 0)
-                depth += SkipSize[cycle];
+            if ((actualSearchDepth + cycle) % SkipDepths[cycle] == 0)
+                actualSearchDepth += SkipSize[cycle];
         }
         if (setjmp(thread->jbuffer)) break;
 
         while (true)
         {
-            score = alphaBeta(thread, info, depth, alpha, beta);
+            score = alphaBeta(thread, info, actualSearchDepth, alpha, beta);
 
             if (is_timeout)
             {
                 break;
             }
 
-            if (is_main && (score <= alpha || score >= beta) && depth > 12)
+            if (is_main && (score <= alpha || score >= beta) && actualSearchDepth > 12)
             {
-                printInfo(pos, info, depth, score, alpha, beta);
+                printInfo(pos, info, actualSearchDepth, score, alpha, beta);
             }
 
             if (score <= alpha)
@@ -913,10 +915,12 @@ void *aspiration_thread(void *t)
                 //beta = (alpha + beta) / 2;
                 alpha = max(score - aspiration, int(VALUE_MATED));
                 failed_low = true;
+                actualSearchDepth = depth;
             }
             else if (score >= beta)
             {
                 beta = min(score + aspiration, int(VALUE_MATE));
+                actualSearchDepth-=(abs(score) < MATE_IN_MAX_PLY / 2);
             }
             else
             {
@@ -924,7 +928,7 @@ void *aspiration_thread(void *t)
                 {
                     pvLength = info->pvLen;
                     memcpy(main_pv, info->pv, sizeof(Move)*pvLength);
-                    printInfo(pos, info, depth, score, alpha, beta);
+                    printInfo(pos, info, actualSearchDepth, score, alpha, beta);
                 }
                 break;
             }
