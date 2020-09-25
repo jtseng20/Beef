@@ -98,7 +98,7 @@ template <Tracing T> template <Color side> int Eval<T>::pawn_shelter_score(int s
         out += kingShield[f][defendingRank];
         bool blocked = (defendingRank != 0) && defendingRank == stormingRank - 1;
         out -= (blocked) ? pawnStormBlocked[f][stormingRank] : pawnStormFree[f][stormingRank];
-        #if TUNERTRACE and TUNESAFETY
+        #if (TUNERTRACE && TUNESAFETY)
         Trace.kingShield[side][f][defendingRank]++;
         if (blocked)
             Trace.pawnStormBlocked[side][f][stormingRank]--;
@@ -345,7 +345,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
             + bool(pos.blockersForKing[side]) * kingpinnedPenalty
             + POPCOUNT(weak & kingRings[side]) * kingweakPenalty;
 
-        #if TUNERTRACE and TUNESAFETY
+        #if (TUNERTRACE && TUNESAFETY)
         Trace.kingDangerBase[side]++;
         Trace.kingShieldBonus[side] -= pawn_shelter/10;
         Trace.noQueen[side] -= !pos.pieceCount[make_piece(opponent, QUEEN)];
@@ -371,7 +371,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
         if (rookChecks)
         {
             king_danger += (rookChecks & safe) ? checkPenalty[ROOK] : unsafeCheckPenalty[ROOK];
-            #if TUNERTRACE and TUNESAFETY
+            #if (TUNERTRACE && TUNESAFETY)
             if (rookChecks & safe)
                 Trace.checkPenalty[side][ROOK]++;
             else
@@ -389,7 +389,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
             if (queenChecks & ~attackedSquares[make_piece(side, KING)])
             {
                 king_danger += (queenChecks & safe) ? checkPenalty[QUEEN] : unsafeCheckPenalty[QUEEN];
-                #if TUNERTRACE and TUNESAFETY
+                #if (TUNERTRACE && TUNESAFETY)
                 if (queenChecks & safe)
                     Trace.checkPenalty[side][QUEEN]++;
                 else
@@ -400,7 +400,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
             if (queenChecks & attackedSquares[make_piece(side, KING)] & double_targets[opponent] & weak)
             {
                 king_danger += queenContactCheck;
-                #if TUNERTRACE and TUNESAFETY
+                #if (TUNERTRACE && TUNESAFETY)
                 Trace.queenContactCheck[side]++;
                 #endif // TUNERTRACE
             }
@@ -413,7 +413,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
         if (bishopChecks)
         {
             king_danger += (bishopChecks & safe) ? checkPenalty[BISHOP] : unsafeCheckPenalty[BISHOP];
-            #if TUNERTRACE and TUNESAFETY
+            #if (TUNERTRACE && TUNESAFETY)
             if (bishopChecks & safe)
                 Trace.checkPenalty[side][BISHOP]++;
             else
@@ -427,7 +427,7 @@ template <Tracing T> template <Color side> Score Eval<T>::king_safety() const
         if (knightChecks)
         {
             king_danger += (knightChecks & safe) ? checkPenalty[KNIGHT] : unsafeCheckPenalty[KNIGHT];
-            #if TUNERTRACE and TUNESAFETY
+            #if (TUNERTRACE && TUNESAFETY)
             if (knightChecks & safe)
                 Trace.checkPenalty[side][KNIGHT]++;
             else
@@ -497,7 +497,7 @@ template <Tracing T> template <Color side, PieceType type> Score Eval<T>::evalua
             king_attackers_count[opponent] ++;
             king_attackers_weight[opponent] += attackerWeights[pc >> 1];
             king_attacks_count[opponent] += POPCOUNT(kingAttacks);
-            #if TUNERTRACE and TUNESAFETY
+            #if (TUNERTRACE && TUNESAFETY)
             Trace.attackerWeights[side][pc >> 1]++;
             #endif // TUNERTRACE
         }
