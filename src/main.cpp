@@ -21,7 +21,7 @@
 int main(int argc, char **argv)
 {
 	Position::init();
-	get_ready();
+	//get_ready();
 	init_tt();
 	book.init(openingBookPath);
 
