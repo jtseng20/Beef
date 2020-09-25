@@ -920,7 +920,7 @@ void *aspiration_thread(void *t)
             else if (score >= beta)
             {
                 beta = min(score + aspiration, int(VALUE_MATE));
-                actualSearchDepth-=(abs(score) < MATE_IN_MAX_PLY / 2);
+                actualSearchDepth--;
             }
             else
             {
