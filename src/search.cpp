@@ -905,9 +905,9 @@ void *aspiration_thread(void *t)
                 break;
             }
 
-            if (is_main && (score <= alpha || score >= beta) && actualSearchDepth > 12)
+            if (is_main && (score <= alpha || score >= beta) && depth > 12)
             {
-                printInfo(pos, info, actualSearchDepth, score, alpha, beta);
+                printInfo(pos, info, depth, score, alpha, beta);
             }
 
             if (score <= alpha)
@@ -928,7 +928,7 @@ void *aspiration_thread(void *t)
                 {
                     pvLength = info->pvLen;
                     memcpy(main_pv, info->pv, sizeof(Move)*pvLength);
-                    printInfo(pos, info, actualSearchDepth, score, alpha, beta);
+                    printInfo(pos, info, depth, score, alpha, beta);
                 }
                 break;
             }

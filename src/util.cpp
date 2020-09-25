@@ -172,11 +172,12 @@ void bench()
 
     for (int i = 0; i < 36; i++){
         cout << "\nPosition [" << (i + 1) << "|36]\n" << endl;
+        clear_threads();
+        clear_tt();
         Position *p = import_fen(benchmarks[i].c_str(), 0);
+        get_ready();
         think(p);
         nodes += main_thread.nodes;
-
-        clear_tt();
     }
 
     int time_taken = getRealTime() - benchStart;
