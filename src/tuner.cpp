@@ -49,7 +49,7 @@ constexpr double adam_b1 = 0.9; // Probably don't modify this one
 constexpr double adam_b2 = 0.999; // Probably don't modify this one
 constexpr int cutStep = 600; // In case we want to start with a very high learning rate and drop it suddenly at a certain point
 
-#define NFENS 9999740
+#define NFENS 3000000//9999740
 #define NTHREADS 7
 #define BATCHSIZE 16384
 

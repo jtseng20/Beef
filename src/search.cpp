@@ -588,19 +588,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                 nullScore = beta;
 
 // TODO (drstrange767#1#): tune depth
-            if (depth < 13)
-            {
-                return nullScore;
-            }
-
-            thread->doNMP = false;
-            int v = alphaBeta(thread, info, depth - R, beta - 1, beta);
-            thread->doNMP = true;
-
-            if (v >= beta)
-            {
-                return v;
-            }
+            return nullScore;
         }
     }
 
