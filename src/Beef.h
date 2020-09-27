@@ -865,7 +865,7 @@ struct searchInfo
 struct SearchThread
 {
     Position position;
-    searchInfo ss[MAX_PLY + 2];
+    searchInfo ss[MAX_PLY + 3];
     int16_t historyTable[2][64][64];
     Move counterMoveTable[14][64];
     pieceToHistory counterMove_history[14][64];

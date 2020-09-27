@@ -66,7 +66,7 @@ template <Color side, MoveType Mt> inline SMove* generatePawnMoves(const Positio
     U64 emptySquares = ~occ;
 
     int from, to;
-    // The b1, b2, b3 scheme of separating the attacks is seen in Stockfish, for example, 
+    // The b1, b2, b3 scheme of separating the attacks is seen in Stockfish, for example,
     // and encourages the compiler to parallelize the operations.
 
     if (Mt == QUIET_CHECK)
@@ -613,7 +613,8 @@ inline int quiet_score(Position *pos, searchInfo *info, Move m)
 
     return pos->my_thread->historyTable[pos->activeSide][from][to] +
     (*(info-1)->counterMove_history)[pc][to] +
-    (*(info-2)->counterMove_history)[pc][to];
+    (*(info-2)->counterMove_history)[pc][to] +
+    (*(info-3)->counterMove_history)[pc][to];
 }
 
 inline int mvvlva_score(Position *pos, Move m)

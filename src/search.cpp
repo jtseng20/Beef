@@ -112,7 +112,7 @@ inline bool isValid(Move m)
 
 void update_countermove_histories(searchInfo *info, PieceCode pc, int to, int16_t bonus)
 {
-    for (int i = 1; i<=2; i++)
+    for (int i = 1; i<=3; i++)
     {
         if (isValid((info - i)->chosenMove))
         {
@@ -847,7 +847,7 @@ void *aspiration_thread(void *t)
 {
     SearchThread *thread = (SearchThread *)t;
     Position *pos = &thread->position;
-    searchInfo *info = &thread->ss[2];
+    searchInfo *info = &thread->ss[3];
     bool is_main = is_main_thread(pos);
 
     Move lastPV = MOVE_NONE;
