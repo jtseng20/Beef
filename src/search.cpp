@@ -47,6 +47,9 @@ Move main_pv[MAX_PLY + 1];
 int pvLength = 0;
 Move ponderMove;
 
+U64 globalCounter = 0;
+U64 globalSum = 0;
+
 inline void getMyTimeLimit()
 {
     is_movetime = globalLimits.timelimited;
@@ -751,10 +754,14 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                         reduction --;
                     if (hashMove && pos->isCapture(hashMove))
                         reduction += 1 + info->hadSingularExtension;
-                }
 
-                int quietScore = history + counter + followup;
-                reduction -= max(-2, min(quietScore / 8000, 2));
+                    int quietScore = history + counter + followup;
+                    reduction -= max(-2, min(quietScore / 8000, 2));
+                }
+                else
+                {
+                    reduction += min(2, (alpha - (pieceValues[EG][pos->capturedPiece] + info->staticEval)) / tacticalReductionMargin);
+                }
 
                 reduction = min(newDepth - 1, max(reduction, 0));
             }

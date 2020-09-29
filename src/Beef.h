@@ -1110,6 +1110,7 @@ constexpr int futility_history_limit[2] = { 16000, 9000 };
 constexpr int RazoringMarginByDepth[3] = {0, 180, 350};
 constexpr int ProbCutMargin = 80;
 constexpr int improvementValue = 20;
+constexpr int tacticalReductionMargin = 294;
 
 constexpr int strongHistory = 13000;
 constexpr int singularDepth = 8;

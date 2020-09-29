@@ -2,6 +2,10 @@
 
 Just another chess engine made for fun as a way to learn C++. Beef is strong enough to beat any human player, but has a long way to go in the computer chess scene. Beef's search routine was initially created by synthesizing the ideas and implementations found in the engines listed below, but has, and will continue to, diversify through the addition of my own ideas.
 
+#### Rating
+
+v0.2.2: 2982 [FastGM 60+0.6](http://www.fastgm.de/60-0.60.html)
+
 ## Features
 
 Beef implements many features found in popular modern engines, built around an original legal-move-only move generation scheme which aims to make search as fast as possible — using this design, the startpos perft speed at one point reached 385 mnps (1 CPU, no hash)! Therefore, Beef mainly hopes to achieve its playing strength from search speed.
