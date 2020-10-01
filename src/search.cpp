@@ -509,8 +509,8 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
         int tb_value = TBResult == TB_LOSS ? -TB_MATE + ply
               : TBResult == TB_WIN  ?  TB_MATE - ply : 0;
 
-        uint8_t ttBound = TBResult == TB_LOSS ? FLAG_BETA
-                : TBResult == TB_WIN  ? FLAG_ALPHA : FLAG_EXACT;
+        uint8_t ttBound = TBResult == TB_LOSS ? FLAG_ALPHA
+                : TBResult == TB_WIN  ? FLAG_BETA : FLAG_EXACT;
 
         if (    ttBound == FLAG_EXACT
             || (ttBound == FLAG_BETA && tb_value >= beta)
@@ -760,7 +760,9 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                 }
                 else
                 {
+                    reduction--;
                     reduction += min(2, (alpha - (pieceValues[EG][pos->capturedPiece] + info->staticEval)) / tacticalReductionMargin);
+                    globalCounter++;
                 }
 
                 reduction = min(newDepth - 1, max(reduction, 0));
@@ -989,6 +991,7 @@ void* think (void *p)
 
     thread *threads = new thread[num_threads];
     initialize_nodes();
+    globalCounter = 0;
 
     for (int i = 0; i < num_threads; i++)
     {
@@ -1012,6 +1015,7 @@ void* think (void *p)
     #endif
 
     ponderMove = pvLength > 1 ? main_pv[1] : MOVE_NONE;
+    cout << "LMRcaptures "<< globalCounter / sum_nodes() << endl;
 
     cout << "info time " << time_passed() << endl;
     cout << "bestmove " << move_to_str(main_pv[0]);

@@ -64,8 +64,8 @@ void init_boards()
     for (int i = 1; i < 64; i++)
         for (int j = 1; j < 64; j++)
     {
-        reductions[0][i][j] = int(1 + round(log(1.5*i) * log(j) * 0.55));
-        reductions[1][i][j] = int(round(log(1.5*i) * log(2*j) * 0.4));
+        reductions[0][i][j] = int(1 + round(log(1.5*i) * log(j) * 0.55)); // quiet not improving
+        reductions[1][i][j] = int(round(log(1.5*i) * log(2*j) * 0.4)); // quiet improving
     }
 
     for (int i = 0; i < 64; i++)

@@ -40,7 +40,7 @@ void get_ready() {
         SearchThread *t = (SearchThread*)get_thread(i);
         t->doNMP = true;
 
-        for (int j = 0; j < MAX_PLY + 2; ++j) {
+        for (int j = 0; j < MAX_PLY + 3; ++j) {
             searchInfo *info = &t->ss[j];
             info->pv[0] = MOVE_NONE;
             info->pvLen = 0;

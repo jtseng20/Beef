@@ -71,14 +71,9 @@ void clear_tt()
 int hashfull()
 {
     int cnt = 0;
-    for (int i = 0; i < 1000 / 3; i++) {
-        TTBucket *bucket = &TT.table[i];
-        for (int j = 0; j < 3; ++j) {
-            if (tte_age(&bucket->entries[j]) == TT.generation) {
-                ++cnt;
-            }
-        }
-    }
+    for (int i = 0; i < 1000 / 3; i++)
+        for (int j = 0; j < 3; j++)
+            cnt += (tte_age(&TT.table[i].entries[j]) == TT.generation);
     return cnt * 1000 / (3 * (1000 / 3));
 }
 
