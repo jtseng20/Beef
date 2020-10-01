@@ -47,9 +47,6 @@ Move main_pv[MAX_PLY + 1];
 int pvLength = 0;
 Move ponderMove;
 
-U64 globalCounter = 0;
-U64 globalSum = 0;
-
 inline void getMyTimeLimit()
 {
     is_movetime = globalLimits.timelimited;
@@ -760,9 +757,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                 }
                 else
                 {
-                    reduction--;
                     reduction += min(2, (alpha - (pieceValues[EG][pos->capturedPiece] + info->staticEval)) / tacticalReductionMargin);
-                    globalCounter++;
                 }
 
                 reduction = min(newDepth - 1, max(reduction, 0));
@@ -991,7 +986,6 @@ void* think (void *p)
 
     thread *threads = new thread[num_threads];
     initialize_nodes();
-    globalCounter = 0;
 
     for (int i = 0; i < num_threads; i++)
     {
@@ -1015,7 +1009,6 @@ void* think (void *p)
     #endif
 
     ponderMove = pvLength > 1 ? main_pv[1] : MOVE_NONE;
-    cout << "LMRcaptures "<< globalCounter / sum_nodes() << endl;
 
     cout << "info time " << time_passed() << endl;
     cout << "bestmove " << move_to_str(main_pv[0]);
