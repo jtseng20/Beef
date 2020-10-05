@@ -493,6 +493,19 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
                     return hashScore;
                  }
         }
+        #if 0
+        else if (num_threads == 1 && tte->depth >= depth - 1)
+        {
+            hashScore = tt_to_score(tte->value, ply);
+            if (!is_pv &&
+                hashScore != UNDEFINED &&
+                ((flag == FLAG_BETA && hashScore >= beta + 100) ||
+                 (flag == FLAG_ALPHA && hashScore <= alpha - 100)))
+                 {
+                    return hashScore;
+                 }
+        }
+        #endif // 0
     }
 
     if (STACKTRACE) globalState = 9;
@@ -528,7 +541,7 @@ int alphaBeta(SearchThread *thread, searchInfo *info, int depth, int alpha, int 
     {
         if (ttHit && tte->static_eval != UNDEFINED)
         {
-            info->staticEval = tte->static_eval;
+            info->staticEval = /*(tte->depth > 5 && hashScore != UNDEFINED) ? hashScore : */tte->static_eval;
         }
         else if (is_null)
         {

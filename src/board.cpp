@@ -125,7 +125,7 @@ void init_boards()
 
         for (int j = 0; j<64; j++)
         {
-            squareDistance[i][j] = min(abs(FILE(i) - FILE(j)) , abs(RANK(i) - RANK(j)));
+            squareDistance[i][j] = max(abs(FILE(i) - FILE(j)) , abs(RANK(i) - RANK(j)));
             BETWEEN_MASKS[i][j] = 0ULL;
             RAY_MASKS[i][j] = 0ULL;
             if (FILE(i) == FILE(j) && i != j)

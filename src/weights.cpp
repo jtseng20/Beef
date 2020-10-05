@@ -18,6 +18,49 @@
 
 #include "Beef.h"
 
+const Score knightMobilityBonus[9] = {
+    S(-71, -23), S(-70, -31), S(-50, 8), S(-40, 15),
+    S(-30, 22), S(-23, 32), S(-14, 33), S(-4, 35),
+    S(2, 22)
+};
+
+const Score bishopMobilityBonus[14] = {
+    S(-75, -49), S(-43, -50), S(-25, -37), S(-17, -9),
+    S(-2, -4), S(7, 3), S(13, 10), S(16, 10),
+    S(21, 13), S(22, 20), S(32, 9), S(53, 11),
+    S(53, 20), S(68, 14)
+};
+
+const Score rookMobilityBonus[15] = {
+    S(-145, -167), S(-120, -101), S(-95, -83), S(-93, -64),
+    S(-87, -61), S(-92, -34), S(-86, -37), S(-82, -32),
+    S(-77, -29), S(-73, -22), S(-73, -18), S(-71, -11),
+    S(-72, -2), S(-60, -4), S(-53, -9)
+};
+
+const Score queenMobilityBonus[28] = {
+    S(1477, -1234), S(17, 108), S(1, 114), S(8, 7),
+    S(19, -6), S(28, -23), S(29, 25), S(33, 38),
+    S(34, 71), S(39, 75), S(42, 86), S(44, 93),
+    S(45, 105), S(50, 103), S(52, 114), S(54, 115),
+    S(52, 123), S(55, 125), S(51, 129), S(67, 113),
+    S(66, 105), S(108, 76), S(113, 54), S(98, 47),
+    S(142, 8), S(176, 44), S(213, -48), S(264, 16)
+};
+
+const int PAWN_MG = 100;
+const int PAWN_EG = 165;
+const int KNIGHT_MG = 367;
+const int KNIGHT_EG = 440;
+const int BISHOP_MG = 426;
+const int BISHOP_EG = 534;
+const int ROOK_MG = 750;
+const int ROOK_EG = 962;
+const int QUEEN_MG = 1302;
+const int QUEEN_EG = 1667;
+const int KING_MG = 0;
+const int KING_EG = 0;
+
 const Score piece_bonus[7][64] = {
 {
     S(0,0), S(0,0), S(0,0), S(0,0), S(0,0), S(0,0), S(0,0), S(0,0),
@@ -91,106 +134,6 @@ const Score piece_bonus[7][64] = {
 }
 };
 
-const Score isolated_penalty[2] = {S(7,26), S(12,27)};
-const Score isolated_penaltyAH[2] = {S(-8,27), S(8,22)};
-
-const Score doubled_penalty[2] = {S(42,22), S(0,117)};
-const Score doubled_penalty_undefended[2] = {S(-10,16), S(-1,19)};
-
-const Score isolated_doubled_penalty[2] = {S(12,31), S(2,-6)};
-const Score isolated_doubled_penaltyAH[2] = {S(-4,60), S(4,39)};
-
-const Score backward_penalty[2] = {S(-5,-5), S(-2,3)};
-
-const Score connected_bonus[2][2][8] = {
-{
-    {S(0,0), S(0,0), S(14,-6), S(18,0), S(31,21), S(58,47), S(274,-2), S(0,0)},
-    {S(0,0), S(13,-22), S(14,0), S(37,31), S(91,89), S(101,271), S(-164,1043), S(0,0)}
-},
-{
-    {S(0,0), S(0,0), S(0,-5), S(-3,-9), S(-1,-4), S(-8,31), S(0,0), S(0,0)},
-    {S(0,0), S(-1,-22), S(3,-3), S(19,0), S(39,35), S(113,-57), S(0,0), S(0,0)}
-}
-};
-
-const Score passedRankBonus[8] = {S(0,0), S(0,0), S(9,13), S(-12,12), S(13,72), S(-2,98), S(67,149), S(0,0)};
-
-const Score passedUnsafeBonus[2][8] = {
-    {S(0,0), S(0,0), S(-13,-8), S(-8,54), S(-50,45), S(8,97), S(-25,191), S(0,0)},
-    {S(0,0), S(0,0), S(-12,-12), S(-1,26), S(-22,-37), S(57,-82), S(83,-95), S(0,0)}
-};
-
-const Score passedBlockedBonus[2][8] = {
-    {S(0,0), S(0,0), S(1,3), S(-2,1), S(6,20), S(11,72), S(73,242), S(0,0)},
-    {S(0,0), S(0,0), S(-11,1), S(-10,-23), S(7,-38), S(23,-83), S(145,-121), S(0,0)}
-};
-
-const Score knightMobilityBonus[9] = {
-    S(-71,-23), S(-70,-31), S(-50,8), S(-40,15), S(-30,22), S(-23,32), S(-14,33),
-    S(-4,35), S(2,22)};
-
-const Score bishopMobilityBonus[14] = {
-    S(-75,-49), S(-43,-50), S(-25,-37), S(-17,-9), S(-2,-4), S(7,3), S(13,10),
-    S(16,10), S(21,13), S(22,20), S(32,9), S(53,11), S(53,20), S(68,14)};
-
-const Score rookMobilityBonus[15] = {
-    S(-145,-167), S(-120,-101), S(-95,-83), S(-93,-64), S(-87,-61), S(-92,-34), S(-86,-37),
-    S(-82,-32), S(-77,-29), S(-73,-22), S(-73,-18), S(-71,-11), S(-72,-2), S(-60,-4),
-    S(-53,-9)};
-
-const Score queenMobilityBonus[28] = {
-    S(1477,-1234), S(17,108), S(1,114), S(8,7), S(19,-6), S(28,-23), S(29,25),
-    S(33,38), S(34,71), S(39,75), S(42,86), S(44,93), S(45,105), S(50,103),
-    S(52,114), S(54,115), S(52,123), S(55,125), S(51,129), S(67,113), S(66,105),
-    S(108,76), S(113,54), S(98,47), S(142,8), S(176,44), S(213,-48), S(264,16)};
-
-const int PAWN_MG = 100;
-const int PAWN_EG = 165;
-const int KNIGHT_MG = 367;
-const int KNIGHT_EG = 440;
-const int BISHOP_MG = 426;
-const int BISHOP_EG = 534;
-const int ROOK_MG = 750;
-const int ROOK_EG = 962;
-const int QUEEN_MG = 1302;
-const int QUEEN_EG = 1667;
-const int KING_MG = 0;
-const int KING_EG = 0;
-
-const Score bishopPawns = S(-1,1);
-const Score rookFile[2] = {S(29,-7), S(40,6)};
-
-const Score battery = S(11,-19);
-const Score kingProtector = S(4,-1);
-const Score outpostBonus[2][2] = {{S(21,23), S(30,22)}, {S(70,21), S(71,39)}};
-const Score reachableOutpost[2] = {S(0,21), S(18,25)};
-const Score minorThreat[7] = {S(0,0), S(3,22), S(33,33), S(39,34), S(68,9), S(65,-17), S(287,932)};
-
-const Score rookThreat[7] = {S(0,0), S(-1,25), S(19,32), S(35,40), S(7,16), S(87,-40), S(471,590)};
-
-const Score kingThreat = S(-12,53);
-const Score kingMultipleThreat = S(-32,98);
-const Score pawnPushThreat = S(20,21);
-const Score safePawnThreat = S(65,9);
-const Score hangingPiece = S(7,17);
-
-const Score bishopOpposerBonus = S(-1,7);
-const Score trappedBishopPenalty = S(53,30);
-const Score veryTrappedBishopPenalty = S(74,121);
-
-const Score defendedRookFile = S(1,-33);
-
-const Score rank7Rook = S(5,39);
-
-const Score passedFriendlyDistance[8] = {S(0,0), S(5,-2), S(-1,-4), S(10,-12), S(15,-14), S(20,-15), S(1,-9), S(0,0)};
-
-const Score passedEnemyDistance[8] = {S(0,0), S(-3,4), S(1,6), S(-4,10), S(-11,32), S(-31,58), S(15,8), S(0,0)};
-
-const Score tarraschRule_friendly[8] = {S(0,0), S(0,0), S(0,0), S(21,-6), S(21,8), S(-13,40), S(-32,62), S(0,0)};
-
-const Score tarraschRule_enemy = S(-28,99);
-
-
 const int my_pieces[5][5] = {
     {  16                    },
     { 188,  10               },
@@ -207,52 +150,139 @@ const int opponent_pieces[5][5] = {
     { 287,   9, 232, 266,   0}
 };
 
-
 const int bishop_pair = 70;
 
-const Score pawnDistancePenalty = S(0,10);
-const Score kingflankAttack = S(0,0);
+const Score passedRankBonus[8] = {
+    S(0,0), S(0,0), S(3, 31), S(-24, 27),
+    S(12, 96), S(8, 126), S(75, 156), S(0, 0)
+};
+
+const Score passedUnsafeBonus[2][8] = {
+    {S(0,0), S(0,0), S(-16, 3), S(-12, 58), S(-47, 46), S(22, 92), S(-16, 187), S(0, 0)},
+    {S(0,0), S(0,0), S(-16, -4), S(-9, 37), S(-26, -14), S(53, -49), S(82, -84), S(0, 0)},
+};
+
+const Score passedBlockedBonus[2][8] = {
+    {S(0,0), S(0,0), S(-2, 14), S(-7, 6), S(8, 25), S(21, 75), S(79, 235), S(0, 0)},
+    {S(0,0), S(0,0), S(-14, 9), S(-16, -14), S(3, -19), S(23, -58), S(147, -106), S(0, 0)},
+};
+
+const Score passedFriendlyDistance[8] = {
+    S(0, 0), S(-1, 1), S(6, -7), S(17, -19),
+    S(11, -29), S(11, -34), S(5, -22), S(0, 0)
+};
+
+const Score passedEnemyDistance[8] = {
+    S(0, 0), S(1, 3), S(0, 0), S(-7, 13),
+    S(-6, 32), S(-16, 52), S(-9, 36), S(0, 0)
+};
+
+const Score tarraschRule_enemy = S(-23, 119);
+const Score tarraschRule_friendly[8] = {
+    S(0, 0), S(0, 0), S(0, 0), S(18, 1),
+    S(24, 16), S(16, 44), S(-24, 68), S(0, 0)
+};
+
+const Score kingflankAttack = S(2, 1);
+const Score pawnDistancePenalty = S(0, 11);
+const Score minorThreat[7] = {
+    S(0, 0), S(3, 22), S(33, 33), S(39, 34),
+    S(68, 9), S(65, -17), S(287, 932)
+};
+
+const Score rookThreat[7] = {
+    S(0, 0), S(-1, 25), S(19, 32), S(35, 40),
+    S(7, 16), S(87, -40), S(471, 590)
+};
+
+const Score kingThreat = S(-12, 53);
+const Score kingMultipleThreat = S(-32, 98);
+const Score pawnPushThreat = S(20, 21);
+const Score safePawnThreat = S(65, 9);
+const Score hangingPiece = S(7, 17);
+const Score isolated_penalty[2] = { S(7, 26),  S(12, 27) };
+
+const Score isolated_penaltyAH[2] = { S(-8, 27),  S(8, 22) };
+
+const Score isolated_doubled_penalty[2] = { S(12, 31),  S(2, -6) };
+
+const Score isolated_doubled_penaltyAH[2] = { S(-4, 60),  S(4, 39) };
+
+const Score doubled_penalty[2] = { S(42, 22),  S(0, 117) };
+
+const Score doubled_penalty_undefended[2] = { S(-10, 16),  S(-1, 19) };
+
+const Score backward_penalty[2] = { S(-5, -5),  S(-2, 3) };
+
+const Score connected_bonus[2][2][8] = {
+{
+    {S(0, 0), S(0, 0), S(14, -6), S(18, 0), S(31, 21), S(58, 47), S(274, -2), S(0, 0)},
+    {S(0, 0), S(13, -22), S(14, 0), S(37, 31), S(91, 89), S(101, 271), S(-164, 1043), S(0, 0)}
+},
+{
+    {S(0, 0), S(0, 0), S(0, -5), S(-3, -9), S(-1, -4), S(-8, 31), S(0, 0), S(0, 0)},
+    {S(0, 0), S(-1, -22), S(3, -3), S(19, 0), S(39, 35), S(113, -57), S(0, 0), S(0, 0)}
+},
+};
+
+const Score bishopPawns = S(-2, 0);
+const Score kingProtector = S(2, 1);
+const Score outpostBonus[2][2] = {
+    {S(26, 39), S(34, 37)},
+    {S(79, 31), S(78, 57)},
+};
+
+const Score reachableOutpost[2] = { S(7, 36),  S(18, 40) };
+
+const Score bishopOpposerBonus = S(-1, 10);
+const Score trappedBishopPenalty = S(55, 31);
+const Score veryTrappedBishopPenalty = S(82, 123);
+const Score defendedRookFile = S(1, -33);
+const Score rank7Rook = S(5, 39);
+const Score rookFile[2] = { S(29, -7),  S(40, 6) };
+
+const Score battery = S(11, -19);
 
 
-/////////////////////////////////////////////
+/****************** Local-search tuned terms ******************/
 
-const int attackerWeights[7] = {0, 0, 37, 19, 14, 0, 0};
+int attackerWeights[7] = {0, 0, 37, 19, 14, 0, 0};
 
-const int checkPenalty[7] = {0, 0, 366, 326, 487, 326, 0};
+int checkPenalty[7] = {0, 0, 366, 326, 487, 326, 0};
 
-const int unsafeCheckPenalty[7] = {0, 0, 79, 160, 132, 104, 0};
+int unsafeCheckPenalty[7] = {0, 0, 79, 160, 132, 104, 0};
 
-const int queenContactCheck = 186;
-const int kingDangerBase = -10;
-const int kingringAttack = 52;
-const int kingpinnedPenalty = 37;
-const int kingweakPenalty = 96;
-const int kingShieldBonus = 14;
-const int noQueen = 584;
+int queenContactCheck = 186;
+int kingDangerBase = -10;
+int kingringAttack = 52;
+int kingpinnedPenalty = 37;
+int kingweakPenalty = 96;
+int kingShieldBonus = 14;
+int noQueen = 584;
 
 
-const int kingShield[4][8] = {
+int kingShield[4][8] = {
     {1, 57, 60, 39, 62, 135, 103, 0},
     {-26, 42, 28, -2, -10, 132, 64, 0},
     {25, 76, 48, 41, 60, 135, 97, 0},
     {5, 25, 15, 7, 17, 50, 63, 0}
 };
 
-const int pawnStormBlocked[4][8] = {
+int pawnStormBlocked[4][8] = {
     {0, 0, 50, -8, 6, 59, 128, 0},
     {0, 0, 71, 10, 7, 0, 94, 0},
     {0, 0, 98, 37, 33, 50, 154, 0},
     {0, 0, 84, 42, 19, 28, 16, 0}
 };
 
-const int pawnStormFree[4][8] = {
+int pawnStormFree[4][8] = {
     {38, -275, -120, 14, 25, 27, 18, 0},
     {32, -158, -24, 27, 11, 6, 7, 0},
     {21, -125, 9, 29, 20, 20, 18, 0},
     {26, -32, 48, 58, 32, 17, 15, 0}
 };
 
-////////////Not modified/////////////////////
-int pieceValues[2][14] = {{0, 0, PAWN_MG, PAWN_MG, KNIGHT_MG, KNIGHT_MG, BISHOP_MG, BISHOP_MG, ROOK_MG, ROOK_MG, QUEEN_MG, QUEEN_MG, 0, 0},
+/****************** Not modified ******************/
+const int pieceValues[2][14] = {{0, 0, PAWN_MG, PAWN_MG, KNIGHT_MG, KNIGHT_MG, BISHOP_MG, BISHOP_MG, ROOK_MG, ROOK_MG, QUEEN_MG, QUEEN_MG, 0, 0},
                           {0, 0, PAWN_EG, PAWN_EG, KNIGHT_EG, KNIGHT_EG, BISHOP_EG, BISHOP_EG, ROOK_EG, ROOK_EG, QUEEN_EG, QUEEN_EG, 0, 0}};
-int nonPawnValue[14] = {0, 0, 0, 0, KNIGHT_MG, KNIGHT_MG, BISHOP_MG, BISHOP_MG, ROOK_MG, ROOK_MG, QUEEN_MG, QUEEN_MG, 0, 0};
+const int nonPawnValue[14] = {0, 0, 0, 0, KNIGHT_MG, KNIGHT_MG, BISHOP_MG, BISHOP_MG, ROOK_MG, ROOK_MG, QUEEN_MG, QUEEN_MG, 0, 0};

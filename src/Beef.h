@@ -909,9 +909,9 @@ extern const int KING_EG;
 
 extern const Score piece_bonus[7][64];
 
-extern int pieceValues[2][14];
+extern const int pieceValues[2][14];
 
-extern int nonPawnValue[14];
+extern const int nonPawnValue[14];
 
 constexpr int SCALE_OCB = 16;
 constexpr int SCALE_OCB_PIECES = 27;
@@ -950,26 +950,26 @@ extern const Score rookMobilityBonus[15];
 extern const Score queenMobilityBonus[28];
 
 
-extern const int attackerWeights[7];
-extern const int checkPenalty[7];
-extern const int unsafeCheckPenalty[7];
-extern const int queenContactCheck;
-extern const int kingDangerBase;
-extern const int kingringAttack;
-extern const int kingpinnedPenalty;
-extern const int kingweakPenalty;
-extern const int kingShieldBonus;
-extern const int noQueen;
+extern int attackerWeights[7];
+extern int checkPenalty[7];
+extern int unsafeCheckPenalty[7];
+extern int queenContactCheck;
+extern int kingDangerBase;
+extern int kingringAttack;
+extern int kingpinnedPenalty;
+extern int kingweakPenalty;
+extern int kingShieldBonus;
+extern int noQueen;
 
 extern const Score kingflankAttack;
 extern const Score pawnDistancePenalty;
 
 
-extern const int kingShield[4][8];
+extern int kingShield[4][8];
 
-extern const int pawnStormBlocked[4][8];
+extern int pawnStormBlocked[4][8];
 
-extern const int pawnStormFree[4][8];
+extern int pawnStormFree[4][8];
 
 extern const int bishop_pair;
 
@@ -1099,6 +1099,7 @@ int qSearch(SearchThread* thread, searchInfo* info, int depth, int alpha, const 
 //void find_optimal_k();
 void testThings();
 void tune();
+void localTune();
 
 const int futility_move_counts[2][9] = {
     {0, 3, 4, 5,  8, 13, 17, 23, 29}, // not improving
@@ -1357,30 +1358,6 @@ struct tunerTrace
     int kingflankAttack[2];
     int pawnDistancePenalty[2];
 
-    // Danger terms ( not linear )
-
-    #if TUNESAFETY
-    int attackerWeights[2][7];
-    int checkPenalty[2][7];
-    int unsafeCheckPenalty[2][7];
-    int queenContactCheck[2];
-    int kingDangerBase[2];
-    int kingringAttack[2];
-    int kingpinnedPenalty[2];
-    int kingweakPenalty[2];
-    int kingShieldBonus[2];
-    int noQueen[2];
-
-
-    int kingShield[2][4][8];
-
-    int pawnStormBlocked[2][4][8];
-
-    int pawnStormFree[2][4][8];
-    #endif
-
-    // end Danger terms
-
     int bishopPawns[2];
     int rookFile[2][2];
     int battery[2];
@@ -1413,5 +1390,38 @@ struct tunerTrace
     int bishop_pair[2];
 
     Score originalScore;
+    Score kingDangerScore[2];
     double scale;
+    bool forcedDraw;
+};
+
+struct localTrace
+{
+    Score dangerScore[2];
+    Score originalScore;
+    double scale;
+    bool forcedDraw;
+
+    int attackerWeights[2][7];
+    int attackCount[2];
+    int attackerCount[2];
+    int checkPenalty[2][7];
+    int unsafeCheckPenalty[2][7];
+    int queenContactCheck[2];
+    int kingDangerBase[2];
+    int kingringAttack[2];
+    int kingpinnedPenalty[2];
+    int kingweakPenalty[2];
+    int kingShieldBonus[2];
+    int noQueen[2];
+
+
+    int kingShield[2][4][8];
+    int pawnStormBlocked[2][4][8];
+    int pawnStormFree[2][4][8];
+
+    int bestPawnShelter[2];
+    int kingShieldTemp[2][4][8];
+    int pawnStormBlockedTemp[2][4][8];
+    int pawnStormFreeTemp[2][4][8];
 };

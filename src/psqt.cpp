@@ -37,6 +37,7 @@ void init_values()
         psq.psqt[BKING][i] = (piece_bonus[KING][FLIP_SQUARE(BLACK, i)] + S(KING_MG, KING_EG)) * S2MSIGN(BLACK);
     }
 
+    #if 0
     pieceValues[MG][0] = pieceValues[MG][1] = 0;
     pieceValues[MG][WPAWN] = pieceValues[MG][BPAWN] = PAWN_MG;
     pieceValues[MG][WKNIGHT] = pieceValues[MG][BKNIGHT] = KNIGHT_MG;
@@ -60,6 +61,7 @@ void init_values()
     nonPawnValue[WROOK] = nonPawnValue[BROOK] = ROOK_MG;
     nonPawnValue[WQUEEN] = nonPawnValue[BQUEEN] = QUEEN_MG;
     nonPawnValue[WKING] = nonPawnValue[BKING] = 0;
+    #endif
 
     for (int victim = BLANK; victim <= BKING; victim++)
         for (int attacker = 0; attacker <= BKING; attacker++)

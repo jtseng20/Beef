@@ -33,9 +33,8 @@ int main(int argc, char **argv)
 
 
     #ifdef __TUNE__
-    //find_optimal_k();
     tune();
-    //testThings();
+    //localTune();
     #else
     loop();
     #endif

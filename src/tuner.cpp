@@ -22,14 +22,16 @@
 #define RMSProp 1
 #define adam 0
 
-#define tuneMobility 1
+#define printAll 1
+#define tuneMobility 0
 #define tuneWeights 0
+#define tunePSQT 0
 #define tuneImbalance 0
-#define tunePassed 0
-#define tuneKing 0
+#define tunePassed 1
+#define tuneKing 1
 #define tuneThreat 0
 #define tunePawns 0
-#define tuneMinors 0
+#define tuneMinors 1
 #define tuneRooks 0
 
 /// RMSProp / adam tuner used for analyzing very large datasets.
@@ -38,23 +40,24 @@
 /// In my implementation, RMSProp has been historically stronger in high-gradient fields, due to higher momentum
 /// and adam is stronger where the weights are believed to be close to optimal values.
 
-constexpr int NTERMS = 629; // Number of weights to be tuned (I don't change this; coefficients that aren't exposed for tuning are just zeroed)
-constexpr int EPOCHS = 10000; // How many iterations to tune over
-constexpr double LR = 2.0; // Learning rate
+constexpr int NTERMS = 619; // Number of weights to be tuned (I don't change this; coefficients that aren't exposed for tuning are just zeroed)
+constexpr int EPOCHS = 1000; // How many iterations to tune over
+constexpr double LR = 1.0; // Learning rate
 constexpr double RMS_E = 0.9; // Probably don't modify this one
 constexpr double decayrate = 0.93; // The learning rate is scaled down this much each decay step
-constexpr int decaySteps = 500; // How often to lower the learning rate
+constexpr int decaySteps = 300; // How often to lower the learning rate
 constexpr int reportSteps = 100; // How often to print out weights
 constexpr double adam_b1 = 0.9; // Probably don't modify this one
 constexpr double adam_b2 = 0.999; // Probably don't modify this one
 constexpr int cutStep = 600; // In case we want to start with a very high learning rate and drop it suddenly at a certain point
 
-#define NFENS 3000000//9999740
+#define NFENS 2500000//9999740
 #define NTHREADS 7
 #define BATCHSIZE 16384
-
+#define QSRESOLVE 0
 
 extern tunerTrace Trace;
+extern localTrace safetyTrace;
 
 struct tunerTuple
 {
@@ -74,7 +77,13 @@ struct RMStunerEntry
     Score originalScore; // the unmerged Score before phasing
     int16_t ntuples;
     tunerTuple* tuples;
-    //int safety[2];
+    Score dangerScore[2];
+    bool forcedDraw;
+};
+
+enum functionType {
+    NORMALTYPE,
+    IMBALANCETYPE
 };
 
 RMStunerEntry *RMStuningData;
@@ -83,6 +92,7 @@ typedef double TVector[NTERMS][2]; // indexed MG, EG
 
 TVector params; // indexed MG, EG
 int8_t coeffs[NTERMS][2]; // indexed WHITE, BLACK
+functionType types[NTERMS] = {NORMALTYPE}; // is this term normal or imbalance?
 TVector deltas = {0}; // indexed MG, EG
 #if RMSProp
 TVector RMS = {0}; // indexed MG, EG
@@ -223,6 +233,9 @@ void print_imbalance_weights(int *index, TVector terms)
 
 void init_imbalance_weights(int *index)
 {
+    for (int i = 0; i < 25; i++)
+        types[*index+i] = IMBALANCETYPE;
+
     params[*index][0] =  my_pieces[0][0];
     params[(*index)++][1] = my_pieces[0][0];
 
@@ -366,7 +379,6 @@ void init_imbalance_coeffs(int *index)
     coeffs[*index][0] =  Trace.opponent_pieces[0][4][3];
     coeffs[(*index)++][1] = Trace.opponent_pieces[1][4][3];
 
-
     coeffs[*index][0] =  Trace.bishop_pair[0];
     coeffs[(*index)++][1] = Trace.bishop_pair[1];
 }
@@ -398,11 +410,17 @@ void init_kingCoeffs(int *index)
 void print_threatTerms(int *index, TVector terms)
 {
     print1("minorThreat", index, terms, 7);
+    //cout << *index << endl;
     print1("rookThreat", index, terms, 7);
+    //cout << *index << endl;
     print0("kingThreat", index, terms);
+    //cout << *index << endl;
     print0("kingMultipleThreat", index, terms);
+    //cout << *index << endl;
     print0("pawnPushThreat", index, terms);
+    //cout << *index << endl;
     print0("safePawnThreat", index, terms);
+    //cout << *index << endl;
     print0("hangingPiece", index, terms);
 }
 
@@ -494,7 +512,39 @@ void print_pieceWeights(int *index, TVector terms)
     printf("const int QUEEN_EG = %d;\n", (int)terms[(*index)++][EG]);
     printf("const int KING_MG = %d;\n", 0);
     printf("const int KING_EG = %d;\n\n", 0);
+}
 
+void init_pieceWeights(int *index)
+{
+    params[*index][0] =  PAWN_MG;
+    params[(*index)++][1] = PAWN_EG;
+    params[*index][0] =  KNIGHT_MG;
+    params[(*index)++][1] = KNIGHT_EG;
+    params[*index][0] =  BISHOP_MG;
+    params[(*index)++][1] = BISHOP_EG;
+    params[*index][0] =  ROOK_MG;
+    params[(*index)++][1] = ROOK_EG;
+    params[*index][0] =  QUEEN_MG;
+    params[(*index)++][1] = QUEEN_EG;
+}
+
+void init_pieceCoeffs(int *index)
+{
+    coeffs[*index][0] =  Trace.piece_values[0][PAWN];
+    coeffs[(*index)++][1] = Trace.piece_values[1][PAWN];
+    coeffs[*index][0] =  Trace.piece_values[0][KNIGHT];
+    coeffs[(*index)++][1] = Trace.piece_values[1][KNIGHT];
+    coeffs[*index][0] =  Trace.piece_values[0][BISHOP];
+    coeffs[(*index)++][1] = Trace.piece_values[1][BISHOP];
+    coeffs[*index][0] =  Trace.piece_values[0][ROOK];
+    coeffs[(*index)++][1] = Trace.piece_values[1][ROOK];
+    coeffs[*index][0] =  Trace.piece_values[0][QUEEN];
+    coeffs[(*index)++][1] = Trace.piece_values[1][QUEEN];
+}
+
+
+void print_PSQTs(int *index, TVector terms)
+{
     printf("const Score piece_bonus[7][64] = {");
     for (int i = 0; i < 7; i++)
     {
@@ -530,19 +580,8 @@ void print_pieceWeights(int *index, TVector terms)
     printf("\n};\n\n");
 }
 
-void init_pieceWeights(int *index)
+void init_PSQTs(int *index)
 {
-    params[*index][0] =  PAWN_MG;
-    params[(*index)++][1] = PAWN_EG;
-    params[*index][0] =  KNIGHT_MG;
-    params[(*index)++][1] = KNIGHT_EG;
-    params[*index][0] =  BISHOP_MG;
-    params[(*index)++][1] = BISHOP_EG;
-    params[*index][0] =  ROOK_MG;
-    params[(*index)++][1] = ROOK_EG;
-    params[*index][0] =  QUEEN_MG;
-    params[(*index)++][1] = QUEEN_EG;
-
     for (int j = 0; j < 64; j++)
     {
         params[*index][0] =  mg_value(piece_bonus[PAWN][j]);
@@ -581,19 +620,8 @@ void init_pieceWeights(int *index)
     }
 }
 
-void init_pieceCoeffs(int *index)
+void init_PSQTCoeffs(int *index)
 {
-    coeffs[*index][0] =  Trace.piece_values[0][PAWN];
-    coeffs[(*index)++][1] = Trace.piece_values[1][PAWN];
-    coeffs[*index][0] =  Trace.piece_values[0][KNIGHT];
-    coeffs[(*index)++][1] = Trace.piece_values[1][KNIGHT];
-    coeffs[*index][0] =  Trace.piece_values[0][BISHOP];
-    coeffs[(*index)++][1] = Trace.piece_values[1][BISHOP];
-    coeffs[*index][0] =  Trace.piece_values[0][ROOK];
-    coeffs[(*index)++][1] = Trace.piece_values[1][ROOK];
-    coeffs[*index][0] =  Trace.piece_values[0][QUEEN];
-    coeffs[(*index)++][1] = Trace.piece_values[1][QUEEN];
-
     for (int j = 0; j < 64; j++)
     {
         coeffs[*index][0] =  (Trace.piece_bonus[0][PAWN][j]);
@@ -634,18 +662,63 @@ void init_pieceCoeffs(int *index)
 
 void print_passedTerms(int *index, TVector terms)
 {
-    print1("passedRankBonus", index, terms, 8);
-    print2("passedUnsafeBonus", index, terms, 2, 8);
-    print2("passedBlockedBonus", index, terms, 2, 8);
+    printf("const Score %s[%d] = {\n    S(0,0), S(0,0), ", "passedRankBonus", 8);
+    for (int i = 2; i < 8; i++, (*index)++)
+    {
+        if (i % 4 == 0)
+            printf("\n    ");
+        printf("S(%d, %d)",(int)(terms[*index][MG]), (int)(terms[(*index)][EG]));
+        if (i < 7)
+            printf(", ");
+    }
+    printf("\n};\n\n");
+    //cout << *index << endl;
+    //print2("passedUnsafeBonus", index, terms, 2, 8);
+
+    printf("const Score %s[%d][%d] = {\n", "passedUnsafeBonus", 2, 8);
+    for (int i = 0; i < 2; i++)
+    {
+        printf("    {S(0,0), S(0,0), ");
+        for (int j = 2; j < 8; j++, (*index)++)
+        {
+            if (j && j % 8 == 0) printf("\n    ");
+            printf("S(%d, %d)", (int)(terms[*index][MG]), (int)(terms[(*index)][EG]));
+            if (j < 7)
+                printf(", ");
+        }
+        printf("},\n");
+    }
+    printf("};\n\n");
+    //cout << *index << endl;
+    //print2("passedBlockedBonus", index, terms, 2, 8);
+    printf("const Score %s[%d][%d] = {\n", "passedBlockedBonus", 2, 8);
+    for (int i = 0; i < 2; i++)
+    {
+        printf("    {S(0,0), S(0,0), ");
+        for (int j = 2; j < 8; j++, (*index)++)
+        {
+            if (j && j % 8 == 0) printf("\n    ");
+            printf("S(%d, %d)", (int)(terms[*index][MG]), (int)(terms[(*index)][EG]));
+            if (j < 7)
+                printf(", ");
+        }
+        printf("},\n");
+    }
+    printf("};\n\n");
+
+    //cout << *index << endl;
     print1("passedFriendlyDistance", index, terms, 8);
+    //cout << *index << endl;
     print1("passedEnemyDistance", index, terms, 8);
+    //cout << *index << endl;
     print0("tarraschRule_enemy", index, terms);
+    //cout << *index << endl;
     print1("tarraschRule_friendly", index, terms, 8);
 }
 
 void init_passedTerms(int *index)
 {
-    for (int i = 0; i < 8; i++)
+    for (int i = 2; i < 8; i++)
     {
         params[*index][0] =  mg_value(passedRankBonus[i]);
         params[(*index)++][1] = eg_value(passedRankBonus[i]);
@@ -654,7 +727,7 @@ void init_passedTerms(int *index)
 
 
     for (int i = 0; i < 2; i++)
-        for (int j = 0; j < 8; j++)
+        for (int j = 2; j < 8; j++)
         {
             params[*index][0] =  mg_value(passedUnsafeBonus[i][j]);
             params[(*index)++][1] = eg_value(passedUnsafeBonus[i][j]);
@@ -663,7 +736,7 @@ void init_passedTerms(int *index)
 
 
     for (int i = 0; i < 2; i++)
-        for (int j = 0; j < 8; j++)
+        for (int j = 2; j < 8; j++)
         {
             params[*index][0] =  mg_value(passedBlockedBonus[i][j]);
             params[(*index)++][1] = eg_value(passedBlockedBonus[i][j]);
@@ -700,7 +773,7 @@ void init_passedTerms(int *index)
 
 void init_passedCoeffs(int *index)
 {
-    for (int i = 0; i < 8; i++)
+    for (int i = 2; i < 8; i++)
     {
         coeffs[*index][0] =  (Trace.passedRankBonus[0][i]);
         coeffs[(*index)++][1] = (Trace.passedRankBonus[1][i]);
@@ -709,7 +782,7 @@ void init_passedCoeffs(int *index)
 
 
     for (int i = 0; i < 2; i++)
-        for (int j = 0; j < 8; j++)
+        for (int j = 2; j < 8; j++)
         {
             coeffs[*index][0] =  (Trace.passedUnsafeBonus[0][i][j]);
             coeffs[(*index)++][1] = (Trace.passedUnsafeBonus[1][i][j]);
@@ -718,7 +791,7 @@ void init_passedCoeffs(int *index)
 
 
     for (int i = 0; i < 2; i++)
-        for (int j = 0; j < 8; j++)
+        for (int j = 2; j < 8; j++)
         {
             coeffs[*index][0] =  (Trace.passedBlockedBonus[0][i][j]);
             coeffs[(*index)++][1] = (Trace.passedBlockedBonus[1][i][j]);
@@ -758,12 +831,19 @@ void init_passedCoeffs(int *index)
 void print_pawnTerms(int *index, TVector terms)
 {
     print1("isolated_penalty", index, terms, 2);
+    //cout << *index << endl;
     print1("isolated_penaltyAH", index, terms, 2);
+    //cout << *index << endl;
     print1("isolated_doubled_penalty", index, terms, 2);
+    //cout << *index << endl;
     print1("isolated_doubled_penaltyAH", index, terms, 2);
+    //cout << *index << endl;
     print1("doubled_penalty", index, terms, 2);
+    //cout << *index << endl;
     print1("doubled_penalty_undefended", index, terms, 2);
+    //cout << *index << endl;
     print1("backward_penalty", index, terms, 2);
+    //cout << *index << endl;
     print3("connected_bonus", index, terms, 2, 2, 8);
 }
 
@@ -882,8 +962,11 @@ void init_pawnCoeffs(int *index)
 void print_mobilityTerms(int *index, TVector terms)
 {
     print1("knightMobilityBonus", index, terms, 9);
+    //cout << *index << endl;
     print1("bishopMobilityBonus", index, terms, 14);
+    //cout << *index << endl;
     print1("rookMobilityBonus", index, terms, 15);
+    //cout << *index << endl;
     print1("queenMobilityBonus", index, terms, 28);
 }
 
@@ -953,11 +1036,17 @@ void init_mobilityCoeffs(int *index)
 void print_minorTerms(int *index, TVector terms)
 {
     print0("bishopPawns", index, terms);
+    //cout << *index << endl;
     print0("kingProtector", index, terms);
+    //cout << *index << endl;
     print2("outpostBonus", index, terms, 2, 2);
+    //cout << *index << endl;
     print1("reachableOutpost", index, terms, 2);
+    //cout << *index << endl;
     print0("bishopOpposerBonus", index, terms);
+    //cout << *index << endl;
     print0("trappedBishopPenalty", index, terms);
+    //cout << *index << endl;
     print0("veryTrappedBishopPenalty", index, terms);
 }
 
@@ -1040,8 +1129,11 @@ void init_minorCoeffs(int *index)
 void print_rookTerms(int *index, TVector terms)
 {
     print0("defendedRookFile", index, terms);
+    //cout << *index << endl;
     print0("rank7Rook", index, terms);
+    //cout << *index << endl;
     print1("rookFile", index, terms, 2);
+    //cout << *index << endl;
     print0("battery", index, terms);
 }
 
@@ -1086,15 +1178,16 @@ void init_rookCoeffs(int *index)
 void print_params(TVector terms)
 {
     int index = 0;
-    print_mobilityTerms(&index, terms);
-    print_pieceWeights(&index, terms);
-    print_imbalance_weights(&index, terms);
-    print_passedTerms(&index, terms);
-    print_kingTerms(&index, terms);
-    print_threatTerms(&index, terms);
-    print_pawnTerms(&index, terms);
-    print_minorTerms(&index, terms);
-    print_rookTerms(&index, terms);
+    if (tuneMobility || printAll) print_mobilityTerms(&index, terms); else index += 66;
+    if (tuneWeights || printAll) print_pieceWeights(&index, terms); else index += 5;
+    if (tunePSQT || printAll) print_PSQTs(&index, terms); else index += 384;
+    if (tuneImbalance || printAll) print_imbalance_weights(&index, terms); else index += 26;
+    if (tunePassed || printAll) print_passedTerms(&index, terms); else index += 55;
+    if (tuneKing || printAll) print_kingTerms(&index, terms); else index += 2;
+    if (tuneThreat || printAll) print_threatTerms(&index, terms); else index += 19;
+    if (tunePawns || printAll) print_pawnTerms(&index, terms); else index += 46;
+    if (tuneMinors || printAll) print_minorTerms(&index, terms); else index += 11;
+    if (tuneRooks || printAll) print_rookTerms(&index, terms);
 }
 
 void init_params()
@@ -1102,6 +1195,7 @@ void init_params()
     int index = 0;
     init_mobilityTerms(&index);
     init_pieceWeights(&index);
+    init_PSQTs(&index);
     init_imbalance_weights(&index);
     init_passedTerms(&index);
     init_kingTerms(&index);
@@ -1113,12 +1207,12 @@ void init_params()
 
 void init_coeffs()
 {
-    memset(&coeffs, 0, sizeof(coeffs));
     int index = 0;
     if (tuneMobility) init_mobilityCoeffs(&index); else index += 66;
-    if (tuneWeights) init_pieceCoeffs(&index); else index += 389;
+    if (tuneWeights) init_pieceCoeffs(&index); else index += 5;
+    if (tunePSQT) init_PSQTCoeffs(&index); else index += 384;
     if (tuneImbalance) init_imbalance_coeffs(&index); else index += 26;
-    if (tunePassed) init_passedCoeffs(&index); else index += 65;
+    if (tunePassed) init_passedCoeffs(&index); else index += 55;
     if (tuneKing) init_kingCoeffs(&index); else index += 2;
     if (tuneThreat) init_threatCoeffs(&index); else index += 19;
     if (tunePawns) init_pawnCoeffs(&index); else index += 46;
@@ -1128,6 +1222,7 @@ void init_coeffs()
 
 void initTuples(RMStunerEntry *entry)
 {
+    memset(&coeffs, 0, sizeof(coeffs));
     init_coeffs();
     int length = 0;
     for (unsigned i = 0; i < NTERMS; i++)
@@ -1160,12 +1255,58 @@ void addRMSentry(RMStunerEntry *entry, Position *pos, double actual)
     entry->scale = Trace.scale;
     entry->originalScore = Trace.originalScore;
     entry->activeSide = pos->activeSide == BLACK;
+    entry->dangerScore[WHITE] = Trace.kingDangerScore[WHITE];
+    entry->dangerScore[BLACK] = Trace.kingDangerScore[BLACK];
+    entry->forcedDraw = Trace.forcedDraw;
     initTuples(entry);
+}
+
+int sanityCheckEval(RMStunerEntry *entry)
+{
+    double mg = 0, eg = 0;
+    double imbalancevalue = 0;
+
+    for (int i = 0; i < entry->ntuples; i++)
+    {
+        if (types[entry->tuples[i].index] == NORMALTYPE)
+        {
+            mg += (double)entry->tuples[i].wcoeff * params[entry->tuples[i].index][MG];
+            mg -= (double)entry->tuples[i].bcoeff * params[entry->tuples[i].index][MG];
+            eg += (double)entry->tuples[i].wcoeff * params[entry->tuples[i].index][EG];
+            eg -= (double)entry->tuples[i].bcoeff * params[entry->tuples[i].index][EG];
+            //cout << "Index " << (entry->tuples[i].index) << " " << (entry->tuples[i].wcoeff - entry->tuples[i].bcoeff) << " * " << params[entry->tuples[i].index][EG]<<" = "<<(entry->tuples[i].wcoeff - entry->tuples[i].bcoeff)* params[entry->tuples[i].index][EG]<<endl;
+        }
+        else
+        {
+            imbalancevalue += (double)entry->tuples[i].wcoeff * params[entry->tuples[i].index][MG];
+            imbalancevalue -= (double)entry->tuples[i].bcoeff * params[entry->tuples[i].index][MG];
+            //cout << "Index " << (entry->tuples[i].index) << " " << (entry->tuples[i].wcoeff - entry->tuples[i].bcoeff) << " * " << params[entry->tuples[i].index][MG]<<" = "<<(entry->tuples[i].wcoeff - entry->tuples[i].bcoeff)* params[entry->tuples[i].index][MG]<<endl;
+        }
+    }
+
+    imbalancevalue /= 16.0;
+    mg += imbalancevalue;
+    eg += imbalancevalue;
+
+    mg += mg_value(entry->dangerScore[WHITE] - entry->dangerScore[BLACK]);
+    eg += eg_value(entry->dangerScore[WHITE] - entry->dangerScore[BLACK]);
+
+
+    #if 0
+    cout << "imbalance value "<<imbalancevalue<<endl;
+    cout <<"dangerM "<<mg_value(entry->dangerScore[WHITE] - entry->dangerScore[BLACK])<<endl;
+    cout <<"dangerE "<<eg_value(entry->dangerScore[WHITE] - entry->dangerScore[BLACK])<<endl;
+    cout << "MG total "<<mg << " EG total "<<eg<<endl;
+    cout << "MG original "<<mg_value(entry->originalScore)<<" EG value "<<eg_value(entry->originalScore)<<endl;
+    cout << "phase "<<entry->phase<<endl;
+    #endif
+    double out = (mg*(256.0-entry->phase) + (eg*entry->phase*entry->scale)) / 256.0;
+    return round(out + (entry->forcedDraw ? 0 : 1)*(entry->activeSide ? -tempo : tempo));
 }
 
 void read_file_data() {
     ifstream fens;
-    fens.open("../FENS.book");
+    fens.open("../lichess-quiet.book");
     string line;
     Position *pos;
     init_params();
@@ -1175,13 +1316,13 @@ void read_file_data() {
         getline(fens, line);
         double result;
 
-        if (strstr(line.c_str(), "[1.0]")) {
+        if (strstr(line.c_str(), "[1.0]") || strstr(line.c_str(), "White")) {
             result = 1.0;
         }
-        else if (strstr(line.c_str(), "[0.0]")) {
+        else if (strstr(line.c_str(), "[0.0]") || strstr(line.c_str(), "Black")) {
             result = 0.0;
         }
-        else if (strstr(line.c_str(), "[0.5]")) {
+        else if (strstr(line.c_str(), "[0.5]") || strstr(line.c_str(), "Draw")) {
             result = 0.5;
         }
         else {
@@ -1193,9 +1334,31 @@ void read_file_data() {
         memset(&Trace, 0, sizeof(tunerTrace));
         pos = import_fen(line.c_str(), 0);
 
+        #if QSRESOLVE
+        if (pos->checkBB)
+        {
+            get_ready();
+            SearchThread* thr = pos->my_thread;
+            searchInfo* info = &thr->ss[3];
+            info->chosenMove = MOVE_NONE;
+            info->staticEval = UNDEFINED;
+            info->ply = 0;
+            info->pvLen = 0;
+            qSearch(thr, info, 0, VALUE_MATED, VALUE_MATE);
+            for (int i = 0; i < info->pvLen; i++)
+                pos->do_move(info->pv[i]);
+        }
+        #endif
+
         addRMSentry(&RMStuningData[i], pos, result);
 
-        if (i % 1000000 == 0) {
+        #if 0
+        int sanityEval = sanityCheckEval(&RMStuningData[i]);
+        if (abs(sanityEval - RMStuningData[i].staticEval) > 5)
+            cout << sanityEval << " vs " << RMStuningData[i].staticEval<<" "<<line<<endl;
+        #endif
+
+        if (i && i % 1000000 == 0) {
             cout << "Reading line " << i << endl;
         }
     }
@@ -1251,21 +1414,32 @@ double find_optimal_k()
 double fastEval(RMStunerEntry *entry)
 {
     double mg = 0, eg = 0;
+    double imbalancevalue = 0;
     // Get deltas
     for (int i = 0; i < entry->ntuples; i++)
     {
-        mg += (double)entry->tuples[i].wcoeff * deltas[entry->tuples[i].index][MG];
-        mg -= (double)entry->tuples[i].bcoeff * deltas[entry->tuples[i].index][MG];
-        eg += (double)entry->tuples[i].wcoeff * deltas[entry->tuples[i].index][EG];
-        eg -= (double)entry->tuples[i].bcoeff * deltas[entry->tuples[i].index][EG];
+        if (types[entry->tuples[i].index] == NORMALTYPE)
+        {
+            mg += (double)entry->tuples[i].wcoeff * deltas[entry->tuples[i].index][MG];
+            mg -= (double)entry->tuples[i].bcoeff * deltas[entry->tuples[i].index][MG];
+            eg += (double)entry->tuples[i].wcoeff * deltas[entry->tuples[i].index][EG];
+            eg -= (double)entry->tuples[i].bcoeff * deltas[entry->tuples[i].index][EG];
+        }
+        else
+        {
+            imbalancevalue += (double)entry->tuples[i].wcoeff * deltas[entry->tuples[i].index][MG];
+            imbalancevalue -= (double)entry->tuples[i].bcoeff * deltas[entry->tuples[i].index][MG];
+        }
     }
 
+    imbalancevalue /= 16.0;
+
     // add deltas to original eval
-    mg += (double)mg_value(entry->originalScore);
-    eg += (double)eg_value(entry->originalScore);
+    mg += (double)mg_value(entry->originalScore) + imbalancevalue;
+    eg += (double)eg_value(entry->originalScore) + imbalancevalue;
 
     double out = (mg*(256.0-entry->phase) + (eg*entry->phase*entry->scale)) / 256.0;
-    return out + (entry->activeSide ? -tempo : tempo);
+    return out + (entry->forcedDraw ? 0 : 1)*(entry->activeSide ? -tempo : tempo);
 }
 
 void calculateGradient(RMStunerEntry *entry, TVector localgradient)
@@ -1389,12 +1563,487 @@ void tune()
         if (epoch && epoch % reportSteps == 0)
             reportParams();
     }
-    //for (int i = 0; i < NTERMS; i++)
-        //cout <<deltas[i][MG]<<" "<<deltas[i][EG]<<endl;
 
     reportParams();
+
+    int correctCounter = 0;
+    for (int i = 0; i < NFENS; i++)
+    {
+        switch(int(RMStuningData[i].actualscore*10))
+        {
+        case 0:
+            if (fastEval(&RMStuningData[i]) < RMStuningData[i].staticEval - 5)
+                correctCounter++;
+            break;
+        case 10:
+            if (fastEval(&RMStuningData[i]) > RMStuningData[i].staticEval + 5)
+                correctCounter++;
+            break;
+        case 5:
+            if (abs(fastEval(&RMStuningData[i])) < abs(RMStuningData[i].staticEval) - 5)
+                correctCounter++;
+            break;
+        }
+    }
+    cout <<  correctCounter / (double)NFENS << endl;
     #endif
 }
 
+
+/*********************************************** Local Search Stuff *************************************************************************/
+struct tunerEntry
+{
+    string fen;
+    double score;
+    localTrace myTrace;
+
+    bool activeSide;
+    int phase;
+};
+
+vector <tunerEntry> tuningData;
+
+void addTunerEntry(string line, Position *pos, double result)
+{
+    localTrace myTrace;
+    memcpy(&myTrace, &safetyTrace, sizeof(localTrace));
+
+    int phase = (24 - (pos->pieceCount[WBISHOP] + pos->pieceCount[BBISHOP] + pos->pieceCount[WKNIGHT] + pos->pieceCount[BKNIGHT])
+        - 2 * (pos->pieceCount[WROOK] + pos->pieceCount[BROOK])
+        - 4 * (pos->pieceCount[WQUEEN] + pos->pieceCount[BQUEEN]));
+
+    phase = (phase * 255 + 12) / 24;
+
+    tuningData.push_back({line, result, myTrace, pos->activeSide, phase});
+}
+
+void read_localdata() {
+    ifstream fens;
+    fens.open("../lichess-quiet.book");
+    string line;
+
+    for (int i = 0; i < NFENS; i++) {
+        getline(fens, line);
+        double result;
+        Position *p;
+
+        if (strstr(line.c_str(), "[1.0]") || strstr(line.c_str(), "White")) {
+            result = 1.0;
+        }
+        else if (strstr(line.c_str(), "[0.0]") || strstr(line.c_str(), "Black")) {
+            result = 0.0;
+        }
+        else if (strstr(line.c_str(), "[0.5]") || strstr(line.c_str(), "Draw")) {
+            result = 0.5;
+        }
+        else {
+            cout << line << endl;
+            result = -1.0;
+            exit(1);
+        }
+
+        memset(&safetyTrace, 0, sizeof(localTrace));
+        p = import_fen(line.c_str(), 0);
+        addTunerEntry(line, p, result);
+
+        if (i && i % 1000000 == 0) {
+            cout << "Reading line " << i << endl;
+        }
+    }
+    cout << "Read " << NFENS << " lines"<<endl;
+    fens.close();
+}
+
+double fastKingEval(tunerEntry *entry)
+{
+    if (entry->myTrace.forcedDraw)
+        return 0;
+
+    double mg, eg = 0;
+    double danger[2] = {0};
+    for (int side = 0; side < 2; side++)
+    {
+        if (entry->myTrace.kingDangerBase[side])
+        {
+            int shelterTotal = 0;
+            for (int j = 0; j < 4; j++)
+                for (int k = 0; k < 8; k++)
+            {
+                shelterTotal += entry->myTrace.kingShield[side][j][k] * kingShield[j][k];
+                shelterTotal += entry->myTrace.pawnStormBlocked[side][j][k] * pawnStormBlocked[j][k];
+                shelterTotal += entry->myTrace.pawnStormFree[side][j][k] * pawnStormFree[j][k];
+            }
+
+            mg += side ? -shelterTotal : shelterTotal;
+
+            int attackWeightTotal = 0;
+            for (int piece = 0; piece < 7; piece++)
+            {
+                attackWeightTotal += entry->myTrace.attackerWeights[side][piece] * attackerWeights[piece];
+            }
+            danger[side] = kingDangerBase * entry->myTrace.kingDangerBase[side]
+                            - shelterTotal * kingShieldBonus / 10.0
+                            - entry->myTrace.noQueen[side] * noQueen
+                            + entry->myTrace.attackerCount[side] * attackWeightTotal
+                            + entry->myTrace.attackCount[side] * kingringAttack
+                            + entry->myTrace.kingpinnedPenalty[side] * kingpinnedPenalty
+                            + entry->myTrace.kingweakPenalty[side] * kingweakPenalty;
+            for (int piece = 0; piece < 7; piece++)
+            {
+                danger[side] += entry->myTrace.checkPenalty[side][piece] * checkPenalty[piece];
+                danger[side] += entry->myTrace.unsafeCheckPenalty[side][piece] * unsafeCheckPenalty[piece];
+            }
+        }
+
+        danger[side] = max(danger[side], 0.0);
+    }
+
+    mg = (danger[BLACK] * danger[BLACK] - danger[WHITE] * danger[WHITE]) / 4096.0;
+    eg = (danger[BLACK] - danger[WHITE]) / 20.0;
+
+    mg += (double)mg_value(entry->myTrace.originalScore);
+    eg += (double)eg_value(entry->myTrace.originalScore);
+
+    double out = (mg*(256.0-entry->phase) + (eg*entry->phase*entry->myTrace.scale)) / 256.0;
+    return out + (entry->activeSide ? -tempo : tempo);
+}
+
+double getSlowError(tunerEntry *entry, int tID)
+{
+    Position* p = import_fen(entry->fen.c_str(), tID);
+
+    SearchThread* thr = p->my_thread;
+    searchInfo* info = &thr->ss[2];
+    info->chosenMove = MOVE_NONE;
+    info->staticEval = UNDEFINED;
+    info->ply = 0;
+
+    int qi = evaluate(thr->position) * S2MSIGN(p->activeSide);
+
+    double sg = sigmoid(qi, K);
+    return (pow(entry->score - sg, 2.0));
+}
+
+double localError() {
+
+    double total = 0.0;
+
+    #pragma omp parallel shared(total)
+    {
+        #pragma omp for schedule(static, 1) reduction(+:total)
+        for (int tID = 0; tID < NTHREADS; tID++)
+            for (int i = tID * (NFENS / NTHREADS); i < (tID + 1) * (NFENS / NTHREADS); i++)
+                total += getSlowError(&tuningData[i], tID);
+    }
+
+    return total / (double) NFENS;
+}
+
+void init_LocalTerms(vector <Parameter>& p)
+{
+    for (int i = 0; i < 7; i++)
+    {
+        if (i < 2 || i > 5)
+            continue;
+        p.push_back({ nullptr, &attackerWeights[i], attackerWeights[i], 2, 1, 0, 0 });
+    }
+
+    for (int i = 0; i < 7; i++)
+    {
+        if (i < 2 || i > 5)
+            continue;
+        p.push_back({ nullptr, &checkPenalty[i], checkPenalty[i], 2, 1, 0, 0 });
+    }
+
+    for (int i = 0; i < 7; i++)
+    {
+        if (i < 2 || i > 5)
+            continue;
+        p.push_back({ nullptr, &unsafeCheckPenalty[i], unsafeCheckPenalty[i], 2, 1, 0, 0 });
+    }
+
+    p.push_back({ nullptr, &queenContactCheck, queenContactCheck, 2, 1, 0, 0 });
+    p.push_back({ nullptr, &kingDangerBase, kingDangerBase, 2, 1, 0, 0 });
+    p.push_back({ nullptr, &kingringAttack, kingringAttack, 2, 1, 0, 0 });
+    p.push_back({ nullptr, &kingpinnedPenalty, kingpinnedPenalty, 2, 1, 0, 0 });
+    p.push_back({ nullptr, &kingweakPenalty, kingweakPenalty, 2, 1, 0, 0 });
+    p.push_back({ nullptr, &kingShieldBonus, kingShieldBonus, 2, 1, 0, 0 });
+    p.push_back({ nullptr, &noQueen, noQueen, 2, 1, 0, 0 });
+
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 8; j++)
+        {
+            if (j > 6)
+                continue;
+            p.push_back({ nullptr, &kingShield[i][j], kingShield[i][j], 2, 1, 0, 0 });
+        }
+
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 8; j++)
+        {
+            if (j < 2 || j > 6)
+                continue;
+            p.push_back({ nullptr, &pawnStormBlocked[i][j], pawnStormBlocked[i][j], 2, 1, 0, 0 });
+        }
+
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 8; j++)
+        {
+            if (j > 6)
+                continue;
+            p.push_back({ nullptr, &pawnStormFree[i][j], pawnStormFree[i][j], 2, 1, 0, 0 });
+        }
+}
+
+void print_localTerms()
+{
+    cout << "=============================="<<endl;
+    printf("\nint attackerWeights[7] = {");
+    for (int i = 0; i < 7; i++)
+    {
+        printf("%d", attackerWeights[i]);
+        if (i < 6)
+            printf(", ");
+    }
+    printf("};\n\n");
+    printf("int checkPenalty[7] = {");
+    for (int i = 0; i < 7; i++)
+    {
+        printf("%d", checkPenalty[i]);
+        if (i < 6)
+            printf(", ");
+    }
+    printf("};\n\n");
+
+    printf("int unsafeCheckPenalty[7] = {");
+    for (int i = 0; i < 7; i++)
+    {
+        printf("%d", unsafeCheckPenalty[i]);
+        if (i < 6)
+            printf(", ");
+    }
+    printf("};\n\n");
+
+    printf("int queenContactCheck = %d;\n", queenContactCheck);
+    printf("int kingDangerBase = %d;\n", kingDangerBase);
+    printf("int kingringAttack = %d;\n", kingringAttack);
+    printf("int kingpinnedPenalty = %d;\n", kingpinnedPenalty);
+    printf("int kingweakPenalty = %d;\n", kingweakPenalty);
+    printf("int kingShieldBonus = %d;\n", kingShieldBonus);
+    printf("int noQueen = %d;\n\n", noQueen);
+
+    printf("\n");
+
+    printf("int kingShield[4][8] = {");
+    for (int i = 0; i < 4; i++)
+    {
+        printf("\n    {");
+        for (int j = 0; j < 8; j++)
+        {
+            printf("%d", kingShield[i][j]);
+            if (j < 7)
+                printf(", ");
+        }
+        printf("}");
+        if (i < 3)
+            printf(",");
+    }
+    printf("\n};\n\n");
+
+    printf("int pawnStormBlocked[4][8] = {");
+    for (int i = 0; i < 4; i++)
+    {
+        printf("\n    {");
+        for (int j = 0; j < 8; j++)
+        {
+            printf("%d", pawnStormBlocked[i][j]);
+            if (j < 7)
+                printf(", ");
+        }
+        printf("}");
+        if (i < 3)
+            printf(",");
+    }
+    printf("\n};\n\n");
+
+    printf("int pawnStormFree[4][8] = {");
+    for (int i = 0; i < 4; i++)
+    {
+        printf("\n    {");
+        for (int j = 0; j < 8; j++)
+        {
+            printf("%d", pawnStormFree[i][j]);
+            if (j < 7)
+                printf(", ");
+        }
+        printf("}");
+        if (i < 3)
+            printf(",");
+    }
+    printf("\n};\n\n");
+    cout << "=============================="<<endl;
+}
+
+
+void set_parameter(Parameter& param)
+{
+    switch (param.flag)
+    {
+    case 0:
+        *param.address = S(param.value, eg_value(*param.address));
+        break;
+    case 1:
+        *param.address = S(mg_value(*param.address), param.value);
+        break;
+    case 2:
+        *param.constaddress = param.value;
+        break;
+    }
+
+    init_values();
+
+}
+
+void localGuess(vector<Parameter>& params, double initial_best)
+{
+    cout << "Updating Gradient..." << endl;
+    double bestError = initial_best;
+    for (unsigned i = 0; i < params.size(); i++)
+    {
+        Parameter& param = params[i];
+        int delta = max(10, abs(param.value / 5));
+        int minVal = param.value - delta + param.valuedelta / 2;
+        int maxVal = param.value + delta + param.valuedelta / 2;
+        param.value = minVal;
+        set_parameter(param);
+        double min_error = localError();
+        param.value = maxVal;
+        set_parameter(param);
+        double max_error = localError();
+        param.errordelta = bestError;
+        param.valuedelta = param.value;
+
+        while (maxVal > minVal)
+        {
+            if (min_error < max_error)
+            {
+                if (minVal == maxVal - 1)
+                {
+                    param.value = minVal;
+                    set_parameter(param);
+                    bestError = min_error;
+                    break;
+                }
+                maxVal = (maxVal + minVal) / 2;
+                param.value = maxVal;
+                set_parameter(param);
+                max_error = localError();
+            }
+            else
+            {
+                if (minVal == maxVal - 1)
+                {
+                    param.value = maxVal;
+                    set_parameter(param);
+                    bestError = max_error;
+                    break;
+                }
+                minVal = (maxVal + minVal) / 2;
+                param.value = minVal;
+                set_parameter(param);
+                min_error = localError();
+            }
+
+            printf("Parameter %u / %zu : V / E : min %d / %f, max %d / %f \n", i + 1, params.size(), minVal, min_error, maxVal, max_error);
+        }
+        param.errordelta = abs(bestError - param.errordelta);
+        param.valuedelta = param.value - param.valuedelta;
+    }
+}
+
+void localTune()
+{
+    reset_threads(NTHREADS);
+    srand(time(0));
+    read_localdata();
+    vector <Parameter> params;
+
+    init_LocalTerms(params);
+
+    double bestError = localError();
+    double newError;
+    cout << "Training error: " << bestError << endl;
+
+    for (int epoch = 0; epoch < 2; epoch++)
+    {
+        for (unsigned i = 0; i < params.size(); i++)
+        {
+            params[i].stability = 1;
+        }
+        random_shuffle(params.begin(), params.end());
+        localGuess(params, bestError); //get a good guess
+        cout << "Beginning local search..." << endl;
+        bool improving = true;
+        bestError = localError();
+        while (improving)
+        {
+            sort(params.begin(), params.end(), greater <Parameter> ());
+            improving = false;
+
+            for (unsigned i = 0; i < params.size(); i++)
+            {
+                if (params[i].stability >= 3)
+                    continue;
+
+                Parameter& param = params[i];
+                param.errordelta = bestError;
+                int delta = (param.valuedelta > 0) ? 1 : -1;
+                param.value += delta;
+                param.valuedelta += delta;
+                set_parameter(param);
+
+                newError = localError();
+
+                if (newError < bestError)
+                {
+                    bestError = newError;
+                    improving = true;
+                    param.stability = 1;
+                    param.errordelta = abs(bestError - param.errordelta);
+                    printf("[Epoch %d] Parameter %u / %zu : V / E  %d / %f \n", epoch + 1, i + 1, params.size(), param.value, bestError);
+                    continue;
+                }
+
+                delta *= -2;
+                param.value += delta;
+                param.valuedelta += delta;
+                set_parameter(param);
+
+                newError = localError();
+
+                if (newError < bestError)
+                {
+                    bestError = newError;
+                    improving = true;
+                    param.stability = 1;
+                    param.errordelta = abs(bestError - param.errordelta);
+                    printf("[Epoch %d] Parameter %u / %zu : V / E  %d / %f\n", epoch + 1, i + 1, params.size(), param.value, bestError);
+                    continue;
+                }
+
+                delta = -(delta / 2);
+                param.value += delta;
+                param.valuedelta += delta;
+                set_parameter(param);
+
+                param.stability++;
+                param.errordelta = 0.0;
+                printf("[Epoch %d] Parameter %u / %zu : V / E  %d / %f (No improvement)\n", epoch + 1, i + 1, params.size(), param.value, bestError);
+            }
+        }
+
+        print_localTerms();
+    }
+}
 #endif
 
